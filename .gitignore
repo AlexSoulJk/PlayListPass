@@ -1,0 +1,7 @@
+.env
+.idea
+__pycache__
+*.xml
+venv
+backend/__pycache__
+alembuc/__pycache__

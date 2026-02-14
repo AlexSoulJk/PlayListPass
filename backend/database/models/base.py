@@ -1,8 +1,5 @@
 from enum import Enum
 
-
-
-
 class UserRole(Enum):
     """Роли пользователей в системе."""
     GUEST = "GUEST"

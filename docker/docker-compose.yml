@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  # --- База Данных ---
+  db:
+    image: postgres:16.2-alpine
+    container_name: playlist_db
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT}:5432"
+    networks:
+      - playlist_network
+
+  # --- Backend ---
+  backend:
+    build:
+      context: ..    
+      dockerfile: docker/backend/Dockerfile
+    container_name: playlist_backend
+    ports:              
+      - "${BACKEND_EXTERNAL_PORT}:${BACKEND_INTERNAL_PORT}"
+    volumes:
+      - ../backend:/app         
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+    networks:
+      - playlist_network
+
+  # --- Frontend ---
+  frontend:
+    build:
+      context: ..                     
+      dockerfile: docker/frontend/Dockerfile 
+    container_name: playlist_frontend
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true 
+    networks:
+      - playlist_network
+
+  # --- Nginx (Gateway) ---
+  nginx:
+    build:
+      context: ..                     
+      dockerfile: docker/nginx/Dockerfile
+    container_name: playlist_nginx
+    ports:
+      - "${NGINX_EXTERNAL_PORT}:80"                
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - playlist_network
+
+volumes:
+  postgres_data:
+
+networks:
+  playlist_network:
+    driver: bridge
