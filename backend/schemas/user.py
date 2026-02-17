@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 from pydantic import BaseModel, Field
-from backend.database.models.base import UserRole, StreamingService
+from database.models.base import UserRole, StreamingService
 # Base schema with common fields
 class UserBase(BaseModel):
     name: str = Field(..., max_length=255, description="User's full name")

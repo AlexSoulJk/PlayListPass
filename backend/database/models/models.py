@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import List, Optional
+from fastapi_users.db import SQLAlchemyBaseUserTableUUID
 
 from sqlalchemy import (
     DateTime,
@@ -17,39 +18,21 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from backend.database.models.base import UserRole, StreamingService
-
-# === Base и Enums ===
-
-from sqlalchemy.orm import DeclarativeBase
+from database.models.base import UserRole, StreamingService, Base
 
 
-class Base(DeclarativeBase):
-    """Базовый класс для декларативных моделей SQLAlchemy."""
-    id: Mapped[uuid.UUID] = mapped_column(
-        primary_key=True, default=uuid.uuid4
-    )
-
-
-# === ДОМЕННАЯ ОБЛАСТЬ ===
-
-class User(Base):
+class User(SQLAlchemyBaseUserTableUUID, Base):
     """
-    Сущность Пользователь.
-
-    Связи:
-    - `credentials`: Один ко многим с UserCredential (1:*), для хранения токенов.
-    - `connections`: Один ко многим с Connection (1:*), для участия в группах.
-    - `tracks_added`: Один ко многим с Track (1:*), треки, добавленные пользователем.
+    User c полями от FastAPI Users (email, password, etc) + твои поля.
     """
     __tablename__ = "users"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        primary_key=True, default=uuid.uuid4
-    )
+    # id, email, hashed_password... уже есть внутри SQLAlchemyBaseUserTableUUID
+
+    # Твои кастомные поля
     name: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    # Связи (Relationship)
+    # Связи
     credentials: Mapped[List["UserCredential"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
@@ -61,7 +44,7 @@ class User(Base):
     )
 
     def __repr__(self) -> str:
-        return f"User(id={self.id}, name='{self.name}', role='{self.role.name}')"
+        return f"User(id={self.id}, email='{self.email}', name='{self.name}')"
 
 
 class Group(Base):
@@ -153,7 +136,7 @@ class Playlist(Base):
     )
 
     group_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("groups.id"), primary_key=True
+        ForeignKey("groups.id")
     )
 
     # Внешний ключ для 1:1 связи с Group.
@@ -252,9 +235,3 @@ class UserCredential(Base):
             f"UserCredential(id={self.id}, user_id={self.user_id}, "
             f"service='{self.service.name}', expiry={self.expiry})"
         )
-
-
-# --- Пример настройки (для демонстрации) ---
-from sqlalchemy import create_engine
-# engine = create_engine("sqlite:///./example.db")
-# Base.metadata.create_all(engine)

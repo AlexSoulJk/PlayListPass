@@ -1,20 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException
-from schemas.auth import UserLoginSchema, UserResponseSchema
-from services.auth import AuthService
+from fastapi import APIRouter
+from services.auth import auth_backend, fastapi_users
+from schemas.auth import UserRead, UserCreate
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+# Создаём отдельный роутер для авторизации
+auth_router = APIRouter(prefix="/auth", tags=["Auth"])
 
-@router.post("/login", response_model=UserResponseSchema)
-async def login(
-    body: UserLoginSchema,
-    # В будущем тут можно инжектить зависимость от БД: session = Depends(get_db)
-):
-    """
-    Моковая ручка авторизации.
-    Принимает email/password, отдает статус.
-    """
-    # 1. Вызываем сервис (бизнес-логику)
-    result = await AuthService.mock_authenticate_user(body)
-    
-    # 2. Возвращаем результат
-    return result
+# Подключаем маршруты от fastapi_users
+auth_router.include_router(
+    fastapi_users.get_auth_router(auth_backend),
+    prefix="/jwt",  # будет /auth/jwt/login, /auth/jwt/logout
+)
+
+auth_router.include_router(
+    fastapi_users.get_register_router(UserRead, UserCreate),
+    prefix="",      # будет /auth/register
+)

@@ -1,20 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes.auth import router as auth_router
+from routes.auth import auth_router
+from routes.test import router as test_router
 
-app = FastAPI(
-    title="PlayListPass API",
-    description="Backend API for music aggregator",
-    version="0.1.0"
-)
+app = FastAPI(title="PlayListPass API")
 
-# --- CORS (Чтобы фронт с localhost:8090 мог стучаться) ---
-origins = [
-    "http://localhost",
-    "http://localhost:8090",
-    "http://127.0.0.1:8090",
-]
-
+# --- CORS ---
+origins = ["http://localhost"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -23,9 +15,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- Подключаем роуты ---
+app = FastAPI(title="PlayListPass API")
 app.include_router(auth_router)
-
-@app.get("/")
-async def root():
-    return {"status": "ok", "service": "PlayListPass Backend"}
+app.include_router(test_router)

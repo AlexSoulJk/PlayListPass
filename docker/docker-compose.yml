@@ -6,13 +6,21 @@ services:
     image: postgres:16.2-alpine
     container_name: playlist_db
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: ${DB_HOST}          
+      DB_PORT: ${DB_PORT}          
+      DB_NAME: ${DB_NAME}
+      SECRET_KEY: ${SECRET_KEY}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "${DB_PORT}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - playlist_network
 
@@ -27,9 +35,16 @@ services:
     volumes:
       - ../backend:/app         
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: ${DB_HOST}          
+      DB_PORT: ${DB_PORT}          
+      DB_NAME: ${DB_NAME}
+      SECRET_KEY: ${SECRET_KEY}
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}
     networks:
       - playlist_network
 

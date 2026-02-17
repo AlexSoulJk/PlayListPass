@@ -5,3 +5,4 @@ __pycache__
 venv
 backend/__pycache__
 alembuc/__pycache__
+.env.override

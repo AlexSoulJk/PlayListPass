@@ -1,18 +1,19 @@
-"""Fix some
+"""initial_migration
 
-Revision ID: 33062d11fb67
+Revision ID: 96f7feef2ca2
 Revises: 
-Create Date: 2025-12-17 04:24:55.866459
+Create Date: 2026-02-17 17:36:48.926016
 
 """
 from typing import Sequence, Union
 
+import fastapi_users_db_sqlalchemy
 from alembic import op
 import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '33062d11fb67'
+revision: str = '96f7feef2ca2'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -29,12 +30,18 @@ def upgrade() -> None:
     sa.UniqueConstraint('name')
     )
     op.create_table('users',
-    sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('name', sa.String(length=255), nullable=False),
+    sa.Column('id', fastapi_users_db_sqlalchemy.generics.GUID(), nullable=False),
+    sa.Column('email', sa.String(length=320), nullable=False),
+    sa.Column('hashed_password', sa.String(length=1024), nullable=False),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('is_superuser', sa.Boolean(), nullable=False),
+    sa.Column('is_verified', sa.Boolean(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
     op.create_table('connections',
-    sa.Column('user_id', sa.Uuid(), nullable=False),
+    sa.Column('user_id', fastapi_users_db_sqlalchemy.generics.GUID(), nullable=False),
     sa.Column('group_id', sa.Uuid(), nullable=False),
     sa.Column('joined_at', sa.DateTime(), nullable=False),
     sa.Column('role', sa.Enum('GUEST', 'MAINTAINER', 'VIEWER', name='connection_role_enum'), nullable=False),
@@ -58,11 +65,11 @@ def upgrade() -> None:
     sa.Column('group_id', sa.Uuid(), nullable=False),
     sa.Column('current_track_index', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['group_id'], ['groups.id'], ),
-    sa.PrimaryKeyConstraint('id', 'group_id')
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_table('user_credentials',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('user_id', sa.Uuid(), nullable=False),
+    sa.Column('user_id', fastapi_users_db_sqlalchemy.generics.GUID(), nullable=False),
     sa.Column('service', sa.Enum('SPOTIFY', 'YOUTUBE', 'YANDEX_MUSIC', name='cred_service_enum'), nullable=False),
     sa.Column('token', sa.Text(), nullable=False),
     sa.Column('expiry', sa.DateTime(), nullable=True),
@@ -72,7 +79,7 @@ def upgrade() -> None:
     op.create_table('tracks',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('playlist_id', sa.Uuid(), nullable=False),
-    sa.Column('added_by_user_id', sa.Uuid(), nullable=False),
+    sa.Column('added_by_user_id', fastapi_users_db_sqlalchemy.generics.GUID(), nullable=False),
     sa.Column('service', sa.Enum('SPOTIFY', 'YOUTUBE', 'YANDEX_MUSIC', name='streaming_service_enum'), nullable=False),
     sa.Column('title', sa.String(length=512), nullable=False),
     sa.Column('duration', sa.Integer(), nullable=False),
@@ -93,6 +100,7 @@ def downgrade() -> None:
     op.drop_table('playlists')
     op.drop_table('groupqr')
     op.drop_table('connections')
+    op.drop_index(op.f('ix_users_email'), table_name='users')
     op.drop_table('users')
     op.drop_table('groups')
     # ### end Alembic commands ###
