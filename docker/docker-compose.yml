@@ -76,6 +76,22 @@ services:
     networks:
       - playlist_network
 
+    # --- Adminer (Database Management) ---
+  adminer:
+    image: adminer:latest
+    container_name: playlist_adminer
+    restart: always
+    ports:
+      - "8081:8080" # Внешний порт 8080
+    environment:
+      # По умолчанию Adminer может подхватить сервер, если передать его через ADMINER_DEFAULT_SERVER
+      ADMINER_DEFAULT_SERVER: db
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - playlist_network
+
 volumes:
   postgres_data:
 
