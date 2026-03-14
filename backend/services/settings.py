@@ -14,13 +14,13 @@ class Settings(BaseSettings):
 
     # Секретный ключ для JWT (нужно добавить в docker-compose или .env файл docker'а)
     SECRET_KEY: str = "UNSAFE_DEFAULT_SECRET_CHANGE_ME"
-
+    # Yandex Music API Client ID (нужно добавить в docker-compose или .env файл docker'а)
+    YANDEX_CLIENT_ID: str = "UNSAFE_DEFAULT_YANDEX_CLIENT_ID_CHANGE"
     model_config = SettingsConfigDict(extra="ignore")
 
 
 # Основной файл из Docker
 docker_env = Path(__file__).parent.parent.parent / "docker" / ".env"
-# Локальный файл переопределений (можно положить в корень проекта)
 override_env = Path(__file__).parent.parent.parent / ".env.override"
 
 # Если есть override, загружаем его тоже (он имеет приоритет)

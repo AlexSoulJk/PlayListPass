@@ -6,3 +6,4 @@ venv
 backend/__pycache__
 alembuc/__pycache__
 .env.override
+*.iml
