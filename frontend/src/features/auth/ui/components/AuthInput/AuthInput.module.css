@@ -1,0 +1,80 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.control {
+  position: relative;
+  width: 100%;
+}
+
+.input {
+  width: 100%;
+  min-height: var(--control-height);
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: var(--color-white);
+  color: var(--color-on-surface);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.2;
+  padding: 0 18px;
+  transition: border-color 120ms ease;
+}
+
+.inputWithToggle {
+  padding-right: 52px;
+}
+
+.input::placeholder {
+  color: var(--color-on-surface);
+}
+
+.input:focus-visible {
+  outline: 3px solid rgba(0, 0, 0, 0.36);
+  outline-offset: 2px;
+}
+
+.inputError {
+  border-color: var(--color-error);
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--color-on-surface);
+}
+
+.passwordToggle:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.36);
+  outline-offset: 2px;
+}
+
+.passwordToggleIcon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.errorText {
+  margin: 0 2px;
+  color: var(--color-error);
+  font-size: 0.86rem;
+  line-height: 1.2;
+}

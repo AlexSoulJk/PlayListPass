@@ -1,0 +1,17 @@
+.button {
+  width: 100%;
+  min-height: var(--control-height);
+  border-radius: 12px;
+  border: 2px solid var(--color-black);
+  background: transparent;
+  color: var(--color-black);
+  font-family: var(--font-brand);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button:focus-visible {
+  outline: 3px solid rgba(0, 0, 0, 0.25);
+  outline-offset: 2px;
+}

@@ -1,0 +1,22 @@
+.button {
+  width: 100%;
+  min-height: var(--control-height);
+  border-radius: 12px;
+  border: 0;
+  background: var(--color-black);
+  color: var(--color-white);
+  font-family: var(--font-brand);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 2px;
+}
+
+.button:disabled {
+  cursor: progress;
+  opacity: 0.75;
+}

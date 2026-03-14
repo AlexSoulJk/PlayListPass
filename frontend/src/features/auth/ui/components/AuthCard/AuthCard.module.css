@@ -1,0 +1,7 @@
+.card {
+  width: min(100%, var(--auth-card-width));
+  border-radius: var(--auth-card-radius);
+  border: 5px solid var(--color-black);
+  background: var(--color-surface-tint);
+  padding: 20px;
+}

@@ -1,0 +1,7 @@
+.error {
+  margin: 0;
+  text-align: center;
+  color: var(--color-error);
+  font-size: 0.95rem;
+  line-height: 1.25;
+}

@@ -1,0 +1,29 @@
+<svg width="1600" height="1000" viewBox="0 0 1600 1000" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="1000" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#220000" />
+      <stop offset="0.55" stop-color="#5B000C" />
+      <stop offset="1" stop-color="#170000" />
+    </linearGradient>
+    <radialGradient id="ringA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(800 380) rotate(90) scale(330 620)">
+      <stop stop-color="#FF2B3F" stop-opacity="0.94" />
+      <stop offset="1" stop-color="#FF2B3F" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="ringB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(820 720) rotate(90) scale(200 720)">
+      <stop stop-color="#FF1A32" stop-opacity="0.85" />
+      <stop offset="1" stop-color="#FF1A32" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="streak" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#FF5064" stop-opacity="0.95" />
+      <stop offset="1" stop-color="#8A0015" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1600" height="1000" fill="url(#bg)" />
+
+  <ellipse cx="800" cy="390" rx="620" ry="250" fill="url(#ringA)" />
+  <ellipse cx="820" cy="720" rx="720" ry="170" fill="url(#ringB)" />
+
+  <path d="M-80 220C120 90 360 80 620 120C840 155 1060 120 1320 60C1450 30 1560 10 1680 -20V120C1470 220 1260 250 1040 230C820 210 600 240 380 330C180 410 40 480 -80 620V220Z" fill="url(#streak)" />
+  <path d="M-120 930C180 760 430 690 720 700C980 710 1250 660 1700 500V620C1400 760 1140 840 860 855C560 870 270 920 -120 1100V930Z" fill="url(#streak)" />
+</svg>

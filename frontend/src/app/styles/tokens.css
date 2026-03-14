@@ -1,0 +1,22 @@
+:root {
+  --color-outline: #79747e;
+  --color-outline-variant: #cac4d0;
+  --color-surface: #fef7ff;
+  --color-surface-container: #f3edf7;
+  --color-surface-tint: rgba(255, 255, 255, 0.5);
+  --color-on-surface: #1d1b20;
+  --color-on-surface-variant: #49454f;
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-error: #d90429;
+
+  --font-brand: "Inter", "Segoe UI", Arial, sans-serif;
+  --font-body: "Roboto", "Segoe UI", Arial, sans-serif;
+
+  --window-width: 905px;
+  --window-height: 680px;
+  --browser-bar-height: 68px;
+  --auth-card-width: 320px;
+  --auth-card-radius: 25px;
+  --control-height: 70px;
+}
