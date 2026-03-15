@@ -1,29 +1,59 @@
+.card {
+  background: rgba(7, 8, 11, 0.84);
+  border-color: rgba(255, 255, 255, 0.32);
+  color: var(--color-white);
+  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(4px);
+}
+
 .content {
-  min-height: 295px;
+  min-height: 330px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 14px;
+  gap: 16px;
+}
+
+.badge {
+  margin: 0;
+  width: fit-content;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .lead {
   margin: 0;
-  text-align: center;
   font-family: var(--font-brand);
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: clamp(1.55rem, 3vw, 2.05rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
 }
 
 .text {
   margin: 0;
-  text-align: center;
-  font-size: 0.95rem;
-  color: var(--color-on-surface-variant);
+  font-size: 1rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.78);
 }
 
 .actions {
-  margin-top: 6px;
+  margin-top: auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.primaryAction {
+  background: var(--color-white);
+  color: #0b0e14;
+}
+
+.secondaryAction {
+  border-color: rgba(255, 255, 255, 0.65);
+  color: var(--color-white);
 }

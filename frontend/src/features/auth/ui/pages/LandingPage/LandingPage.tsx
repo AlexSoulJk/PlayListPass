@@ -10,16 +10,17 @@ export function LandingPage() {
 
   return (
     <AuthShell>
-      <AuthCard>
+      <AuthCard className={styles.card}>
         <div className={styles.content}>
-          <p className={styles.lead}>Welcome to PlaylistPass</p>
-          <p className={styles.text}>Choose an action to continue to login or registration.</p>
+          <p className={styles.badge}>PlaylistPass</p>
+          <h2 className={styles.lead}>Собирайте общий плейлист за секунды</h2>
+          <p className={styles.text}>Войдите в аккаунт или создайте новый профиль, чтобы продолжить.</p>
           <div className={styles.actions}>
-            <AuthButtonPrimary onClick={() => navigate('/auth/login')} type="button">
-              Login
+            <AuthButtonPrimary className={styles.primaryAction} onClick={() => navigate('/auth/login')} type="button">
+              Войти
             </AuthButtonPrimary>
-            <AuthButtonSecondary onClick={() => navigate('/auth/register/email')} type="button">
-              Register
+            <AuthButtonSecondary className={styles.secondaryAction} onClick={() => navigate('/auth/register/email')} type="button">
+              Регистрация
             </AuthButtonSecondary>
           </div>
         </div>

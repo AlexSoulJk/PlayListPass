@@ -1,36 +1,44 @@
 # PlayListPass MVP
 
-Агрегатор музыкальных плейлистов (Yandex, Spotify, VK).
+PlayListPass — сервис для совместной работы с музыкальными плейлистами.
 
-## 🛠 Технический стек
-- **Backend:** Python 3.11, FastAPI, SQLAlchemy (Async), PostgreSQL.
-- **Frontend:** React, TypeScript, Vite, Mantine UI.
-- **Infra:** Docker Compose, Nginx.
+## Технический стек
+- Backend: Python 3.11, FastAPI, SQLAlchemy (async), PostgreSQL.
+- Frontend: React 19, TypeScript, Vite.
+- Инфраструктура: Docker Compose, Nginx, Adminer.
 
-## 🚀 Быстрый старт
+## Быстрый запуск
 
-### Предварительные требования
-1. Установленный **Docker Desktop** (и запущенный).
-2. Созданный файл `.env` в папке `docker/`.
+### Предварительные условия
+1. Установлен и запущен Docker Desktop.
+2. В каталоге `docker/` создан файл `.env` с переменными окружения.
 
-```
-DB_NAME=mock_db_name
-DB_USER=mock_user
+Пример:
+
+```env
+DB_NAME=playlistpass
+DB_USER=postgres
 DB_PASSWORD=secret_pass
 DB_HOST=db
 DB_PORT=5432
 
-NGINX_EXTERNAL_PORT=your_port
-
-FRONTEND_INTERNAL_PORT=your_port
-
-BACKEND_INTERNAL_PORT=your_port
-BACKEND_EXTERNAL_PORT=your_port
+NGINX_EXTERNAL_PORT=8090
+FRONTEND_INTERNAL_PORT=5173
+BACKEND_INTERNAL_PORT=8000
+BACKEND_EXTERNAL_PORT=8000
 ```
 
-### 1. Первый запуск
-Перейдите в папку с инфраструктурой и запустите сборку:
+### Запуск
 
 ```bash
 cd docker
 docker-compose up --build
+```
+
+После запуска:
+- Frontend: `http://localhost:8090`
+- Backend API: `http://localhost:8000`
+- Swagger: `http://localhost:8000/docs`
+- Adminer: `http://localhost:8081`
+
+Подробности по сервисам и URL находятся в [docs/docker.md](docs/docker.md).
