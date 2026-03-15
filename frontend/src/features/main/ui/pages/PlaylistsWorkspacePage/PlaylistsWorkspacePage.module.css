@@ -1,0 +1,34 @@
+.toolbar {
+  min-height: 54px;
+  border-radius: 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.33);
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  color: rgba(255, 255, 255, 0.74);
+}
+
+.list {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.item {
+  min-height: 88px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.26);
+  padding: 12px 14px;
+}
+
+.itemTitle {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.itemMeta {
+  margin: 8px 0 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.86rem;
+}

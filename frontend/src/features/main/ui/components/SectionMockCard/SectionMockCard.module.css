@@ -1,0 +1,23 @@
+.card {
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(10, 0, 0, 0.46);
+  padding: 18px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: 1.36rem;
+  font-weight: 700;
+}
+
+.description {
+  margin: 8px 0 0;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.4;
+}
+
+.content {
+  margin-top: 14px;
+}

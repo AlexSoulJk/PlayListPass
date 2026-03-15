@@ -1,0 +1,27 @@
+.searchBar {
+  min-height: 56px;
+  border-radius: 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.32);
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  color: rgba(255, 255, 255, 0.74);
+}
+
+.results {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.resultItem {
+  min-height: 54px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.17);
+  background: rgba(0, 0, 0, 0.28);
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+}

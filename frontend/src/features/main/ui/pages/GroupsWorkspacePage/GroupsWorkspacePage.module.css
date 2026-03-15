@@ -1,0 +1,242 @@
+.root {
+  display: grid;
+  grid-template-columns: 336px minmax(0, 1fr);
+  gap: 16px;
+  height: 100%;
+}
+
+.groupListSection,
+.detailsSection {
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(15, 0, 0, 0.46);
+}
+
+.groupListSection {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+
+.groupListHeader {
+  min-height: 72px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.groupListTitle {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: 1.32rem;
+  font-weight: 700;
+}
+
+.editButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.editButton svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.groupList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.groupCard {
+  min-height: 82px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(20, 0, 0, 0.52);
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 14px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.groupCardActive {
+  background: #000000;
+}
+
+.avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #eceaea, #c7c4ca 60%, #a9a5ac 100%);
+}
+
+.groupName {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.detailsSection {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.backButton {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.backButton svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.detailsHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.detailsAvatar {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(193, 188, 194, 0.32);
+}
+
+.detailsName {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.linkBlocks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.linkBlock {
+  width: 100%;
+  min-height: 56px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(8, 0, 0, 0.5);
+  color: inherit;
+  padding: 0 16px;
+  font-size: 1.03rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.linkArrow {
+  font-size: 2rem;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.membersCard {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.17);
+  background: rgba(8, 0, 0, 0.48);
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.memberRow {
+  min-height: 62px;
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.memberAvatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #c7c7c7;
+}
+
+.memberName {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.memberRole {
+  color: #ff1d1d;
+  font-weight: 700;
+  text-transform: lowercase;
+}
+
+.deleteButton {
+  margin-top: auto;
+  width: 100%;
+  min-height: 54px;
+  border-radius: 14px;
+  border: 0;
+  background: #050505;
+  color: #fe1111;
+  font-size: 2rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 1180px) {
+  .root {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .detailsName {
+    font-size: 1.5rem;
+  }
+
+  .deleteButton {
+    font-size: 1.4rem;
+  }
+
+  .groupCard {
+    border-radius: 20px;
+  }
+}
