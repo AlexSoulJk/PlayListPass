@@ -3,6 +3,7 @@
   grid-template-columns: 336px minmax(0, 1fr);
   gap: 16px;
   height: 100%;
+  position: relative;
 }
 
 .groupListSection,
@@ -43,7 +44,7 @@
   height: 36px;
   border-radius: 8px;
   border: 0;
-  background: transparent;
+  background: rgba(0, 0, 0, 0.28);
   color: inherit;
   cursor: pointer;
 }
@@ -53,9 +54,18 @@
   height: 22px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.8;
+  stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.errorText {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(178, 7, 7, 0.24);
+  color: #ffb8b8;
+  font-size: 0.86rem;
 }
 
 .groupList {
@@ -64,6 +74,13 @@
   gap: 8px;
   overflow: auto;
   padding-right: 4px;
+}
+
+.emptyState {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 0.92rem;
+  line-height: 1.4;
 }
 
 .groupCard {
@@ -103,21 +120,42 @@
   gap: 12px;
 }
 
-.backButton {
-  width: 38px;
-  height: 38px;
-  border-radius: 9px;
-  border: 0;
-  background: transparent;
-  color: inherit;
+.detailsTopBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.backButton svg {
-  width: 24px;
-  height: 24px;
+.modeBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.3);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.pencilButton {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.32);
+  color: inherit;
+  cursor: pointer;
+}
+
+.pencilButton svg {
+  width: 22px;
+  height: 22px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
@@ -126,7 +164,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .detailsAvatar {
@@ -142,6 +180,100 @@
   font-family: var(--font-brand);
   font-size: 2rem;
   line-height: 1.1;
+  text-align: center;
+}
+
+.imageUploadBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.uploadButton {
+  min-height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(0, 0, 0, 0.36);
+  color: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 9px 12px;
+  cursor: pointer;
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+.imageUploadText {
+  margin: 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.8);
+  word-break: break-word;
+  text-align: center;
+}
+
+.createDetailsForm,
+.renameForm {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(8, 0, 0, 0.48);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.renameLabel {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.renameControls {
+  display: flex;
+  gap: 8px;
+}
+
+.renameInput {
+  width: 100%;
+  min-height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(11, 0, 0, 0.72);
+  color: inherit;
+  padding: 0 12px;
+}
+
+.renameButton {
+  min-height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: #160000;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0 14px;
+  cursor: pointer;
+}
+
+.formActions {
+  display: flex;
+  gap: 8px;
+}
+
+.secondaryButton {
+  min-height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  color: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0 14px;
+  cursor: pointer;
 }
 
 .linkBlocks {
@@ -167,7 +299,7 @@
 }
 
 .linkArrow {
-  font-size: 2rem;
+  font-size: 1rem;
   line-height: 1;
   color: rgba(255, 255, 255, 0.85);
 }
@@ -202,10 +334,34 @@
   font-weight: 600;
 }
 
+.memberActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
 .memberRole {
   color: #ff1d1d;
   font-weight: 700;
   text-transform: lowercase;
+}
+
+.memberRoleButton {
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.36);
+  color: #fff;
+  font-size: 0.75rem;
+  line-height: 1;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.permissionHint {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.87rem;
 }
 
 .deleteButton {
@@ -216,12 +372,81 @@
   border: 0;
   background: #050505;
   color: #fe1111;
-  font-size: 2rem;
+  font-size: 1.3rem;
   font-weight: 700;
   cursor: pointer;
 }
 
-@media (max-width: 1180px) {
+.editButton:disabled,
+.pencilButton:disabled,
+.renameButton:disabled,
+.secondaryButton:disabled,
+.memberRoleButton:disabled,
+.deleteButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.68);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.modalCard {
+  width: min(560px, 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #150707;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modalTitle {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: 1.35rem;
+}
+
+.modalText {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.modalInput {
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.4);
+  color: inherit;
+  padding: 0 12px;
+}
+
+.modalActions {
+  display: flex;
+  gap: 8px;
+}
+
+.modalLinkButton {
+  min-height: 40px;
+  border-radius: 10px;
+  border: 0;
+  background: #260000;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 10px 14px;
+  text-decoration: none;
+}
+
+@media (max-width: 1240px) {
   .root {
     grid-template-columns: 1fr;
   }
@@ -233,10 +458,31 @@
   }
 
   .deleteButton {
-    font-size: 1.4rem;
+    font-size: 1.05rem;
   }
 
   .groupCard {
     border-radius: 20px;
+  }
+
+  .memberRow {
+    grid-template-columns: 44px 1fr;
+  }
+
+  .memberAvatar {
+    width: 44px;
+    height: 44px;
+  }
+
+  .memberActions {
+    grid-column: 1 / -1;
+    align-items: flex-start;
+    margin-left: 56px;
+  }
+
+  .renameControls,
+  .formActions,
+  .modalActions {
+    flex-direction: column;
   }
 }
