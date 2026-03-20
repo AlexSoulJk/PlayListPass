@@ -32,7 +32,6 @@ export function RegisterCredentialsStepForm() {
   const navigate = useNavigate()
   const { registerDraft, setRegisterDraft, registerOnly } = useAuth()
   const [submitError, setSubmitError] = useState<string | null>(null)
-  const [isMockLoading, setIsMockLoading] = useState(false)
 
   const {
     register,
@@ -62,11 +61,9 @@ export function RegisterCredentialsStepForm() {
         password: values.password,
       })
 
-      setIsMockLoading(true)
       await wait(MOCK_LOADER_DURATION_MS)
       navigate('/auth/login', { replace: true })
     } catch (error) {
-      setIsMockLoading(false)
 
       if (error instanceof AuthApiError) {
         if (error.code === 'USER_ALREADY_EXISTS') {
@@ -87,7 +84,7 @@ export function RegisterCredentialsStepForm() {
     }
   })
 
-  const isBusy = isSubmitting || isMockLoading
+  const isBusy = isSubmitting
 
   return (
     <form className={styles.form} onSubmit={onSubmit} noValidate aria-busy={isBusy}>
@@ -133,15 +130,6 @@ export function RegisterCredentialsStepForm() {
       </fieldset>
 
       {submitError ? <AuthInlineError>{submitError}</AuthInlineError> : null}
-
-      {isMockLoading ? (
-        <div className={styles.loadingOverlay} role="status" aria-live="polite">
-          <div className={styles.loadingCard}>
-            <span className={styles.spinner} aria-hidden />
-            <p className={styles.loadingText}>Регистрация завершена. Переходим на страницу входа...</p>
-          </div>
-        </div>
-      ) : null}
     </form>
   )
 }
