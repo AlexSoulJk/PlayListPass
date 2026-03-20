@@ -385,7 +385,7 @@ export function GroupsWorkspacePage() {
   }
 
   const qrExpiryLabel = groupQr ? new Date(groupQr.expired_at).toLocaleString('ru-RU') : '—'
-  const groupImageLabel = pendingImageName ? `Файл: ${pendingImageName}` : 'Загрузка изображения (mock)'
+  const groupImageLabel = pendingImageName ? `Файл: ${pendingImageName}` : ''
 
   return (
     <section className={styles.root}>
