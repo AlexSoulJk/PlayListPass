@@ -59,6 +59,8 @@ class Group(Base):
 
     name: Mapped[str] = mapped_column(String(1000), unique=True, nullable=False)
 
+    image_url: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
+
     is_public: Mapped[bool] = mapped_column(
         Boolean, default=True, nullable=False
     )
@@ -68,7 +70,9 @@ class Group(Base):
     )
 
     def __repr__(self) -> str:
-        return f"Group(id={self.id}, code='{self.code}', is_active={self.is_public})"
+        return (f"Group(id={self.id}, code='{self.code}', is_active={self.is_public}, "
+        f"image_url='{self.image_url}')"
+        )
 
 
 class GroupQr(Base):
@@ -148,10 +152,15 @@ class Playlist(Base):
         back_populates="playlist", order_by="Track.added_at", cascade="all, delete-orphan"
     )
 
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    image_url: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
+
     def __repr__(self) -> str:
         return (
             f"Playlist(id={self.id}, group_id={self.group_id}, "
-            f"current_track_index={self.current_track_index})"
+            f"current_track_index={self.current_track_index}, name='{self.name}', "
+            f"image_url='{self.image_url}')"
         )
 
 
