@@ -15,7 +15,6 @@ export type GroupCreatePayload = {
 
 export type GroupUpdatePayload = {
   name?: string
-  image_url?: string | null
 }
 
 export type GroupPlaylistItem = {
@@ -44,6 +43,18 @@ export type GroupDeleteResponse = {
   group_id: string
 }
 
+export type GroupImageUploadInitPayload = {
+  filename: string
+  content_type?: string | null
+}
+
+export type GroupImageUploadInitResponse = {
+  object_key: string
+  upload_url: string
+  file_url: string
+  expires_in_seconds: number
+}
+
 export type GroupsErrorCode =
   | 'UNAUTHORIZED'
   | 'GROUP_NOT_FOUND'
@@ -52,6 +63,10 @@ export type GroupsErrorCode =
   | 'GROUP_NAME_ALREADY_EXISTS'
   | 'GROUP_USER_NOT_FOUND'
   | 'CANNOT_CHANGE_MAINTAINER_ROLE'
+  | 'GROUP_IMAGE_UNSUPPORTED_FORMAT'
+  | 'GROUP_IMAGE_OBJECT_NOT_FOUND'
+  | 'GROUP_IMAGE_UPLOAD_FAILED'
+  | 'STORAGE_BACKEND_NOT_AVAILABLE'
   | 'VALIDATION_ERROR'
   | 'NETWORK_ERROR'
   | 'UNKNOWN'

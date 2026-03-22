@@ -24,6 +24,56 @@ services:
     networks:
       - playlist_network
 
+  # --- Local S3 (MinIO) ---
+  minio:
+    image: minio/minio:latest
+    container_name: playlist_minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"  # S3 API
+      - "9001:9001"  # MinIO Console
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    networks:
+      - playlist_network
+
+  # --- MinIO init (bucket + CORS + public read) ---
+  minio_init:
+    image: minio/mc:latest
+    container_name: playlist_minio_init
+    depends_on:
+      - minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        until mc alias set local http://minio:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD; do
+          echo 'Waiting for MinIO...'
+          sleep 2
+        done
+        mc mb -p local/$$S3_BUCKET_NAME || true
+        i=0
+        until mc anonymous set download local/$$S3_BUCKET_NAME; do
+          i=$$((i + 1))
+          if [ $$i -ge 10 ]; then
+            echo 'Failed to set anonymous policy'
+            break
+          fi
+          sleep 2
+        done
+        echo 'MinIO bucket initialized'
+        exit 0
+    restart: "no"
+    networks:
+      - playlist_network
+
   # --- Backend ---
   backend:
     build:
@@ -37,6 +87,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      minio:
+        condition: service_started
+      minio_init:
+        condition: service_completed_successfully
     environment:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
@@ -45,6 +99,14 @@ services:
       DB_NAME: ${DB_NAME}
       SECRET_KEY: ${SECRET_KEY}
       DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+      S3_REGION_NAME: ${S3_REGION_NAME}
+      S3_ENDPOINT_URL: ${S3_ENDPOINT_URL}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+      S3_PUBLIC_BASE_URL: ${S3_PUBLIC_BASE_URL}
+      S3_PRESIGNED_PUBLIC_BASE_URL: ${S3_PRESIGNED_PUBLIC_BASE_URL}
+      S3_PRESIGNED_URL_TTL_SECONDS: ${S3_PRESIGNED_URL_TTL_SECONDS}
     networks:
       - playlist_network
 
@@ -94,6 +156,7 @@ services:
 
 volumes:
   postgres_data:
+  minio_data:
 
 networks:
   playlist_network:

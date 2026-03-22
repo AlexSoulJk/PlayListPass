@@ -3,6 +3,8 @@ import { httpClient } from '../../../shared/api/httpClient'
 import type {
   GroupCreatePayload,
   GroupDeleteResponse,
+  GroupImageUploadInitPayload,
+  GroupImageUploadInitResponse,
   GroupListItem,
   GroupMutableRole,
   GroupPlaylistItem,
@@ -76,6 +78,18 @@ const resolveGroupsError = (error: unknown): GroupsErrorCode => {
 
   if (detail.includes('GROUP_CANNOT_CHANGE_MAINTAINER_ROLE')) {
     return 'CANNOT_CHANGE_MAINTAINER_ROLE'
+  }
+
+  if (detail.includes('GROUP_IMAGE_UNSUPPORTED_FORMAT') || detail.includes('GROUP_IMAGE_FORMAT_MISMATCH')) {
+    return 'GROUP_IMAGE_UNSUPPORTED_FORMAT'
+  }
+
+  if (detail.includes('GROUP_IMAGE_OBJECT_NOT_FOUND')) {
+    return 'GROUP_IMAGE_OBJECT_NOT_FOUND'
+  }
+
+  if (detail.includes('STORAGE_BACKEND_NOT_AVAILABLE')) {
+    return 'STORAGE_BACKEND_NOT_AVAILABLE'
   }
 
   if (status === 401) {
@@ -216,5 +230,52 @@ export const getGroupQr = async (
     return data
   } catch (error) {
     throw toGroupsApiError(error, 'Не удалось загрузить QR-код группы')
+  }
+}
+
+export const uploadGroupImage = async (
+  accessToken: string,
+  groupId: string,
+  file: File,
+): Promise<GroupListItem> => {
+  const initPayload: GroupImageUploadInitPayload = {
+    filename: file.name,
+    content_type: file.type || null,
+  }
+
+  let initResponse: GroupImageUploadInitResponse
+
+  try {
+    const { data } = await httpClient.post<GroupImageUploadInitResponse>(
+      `/groups/${groupId}/image/upload-init`,
+      initPayload,
+      authHeaders(accessToken),
+    )
+    initResponse = data
+  } catch (error) {
+    throw toGroupsApiError(error, 'Не удалось подготовить загрузку картинки')
+  }
+
+  try {
+    await axios.put(initResponse.upload_url, file, {
+      headers: {
+        'Content-Type': file.type || 'application/octet-stream',
+      },
+    })
+  } catch {
+    throw new GroupsApiError('GROUP_IMAGE_UPLOAD_FAILED', 'Не удалось загрузить файл в хранилище')
+  }
+
+  try {
+    const { data } = await httpClient.post<GroupListItem>(
+      `/groups/${groupId}/image/commit`,
+      {
+        object_key: initResponse.object_key,
+      },
+      authHeaders(accessToken),
+    )
+    return data
+  } catch (error) {
+    throw toGroupsApiError(error, 'Не удалось подтвердить загрузку картинки')
   }
 }

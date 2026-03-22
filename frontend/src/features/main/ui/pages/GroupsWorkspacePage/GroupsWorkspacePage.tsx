@@ -10,6 +10,7 @@ import {
   getGroupQr,
   getGroupUsers,
   GroupsApiError,
+  uploadGroupImage,
   updateGroupInfo,
 } from '../../../../groups/api/groupsApi'
 import type {
@@ -52,6 +53,14 @@ const toUiErrorText = (error: unknown): string => {
       return 'Участник не найден в выбранной группе.'
     case 'CANNOT_CHANGE_MAINTAINER_ROLE':
       return 'Нельзя изменить роль host.'
+    case 'GROUP_IMAGE_UNSUPPORTED_FORMAT':
+      return 'Неподдерживаемый формат картинки. Используйте JPG, JPEG, PNG или WEBP.'
+    case 'GROUP_IMAGE_OBJECT_NOT_FOUND':
+      return 'Файл картинки не найден в хранилище. Попробуйте загрузить снова.'
+    case 'GROUP_IMAGE_UPLOAD_FAILED':
+      return 'Не удалось загрузить файл картинки. Повторите попытку.'
+    case 'STORAGE_BACKEND_NOT_AVAILABLE':
+      return 'Сервис хранения временно недоступен. Попробуйте позже.'
     case 'VALIDATION_ERROR':
       return 'Проверьте корректность данных формы.'
     case 'NETWORK_ERROR':
@@ -76,6 +85,18 @@ const roleChangeLabel: Record<GroupMutableRole, string> = {
   VIEWER: 'Сделать viewer',
 }
 
+const getGroupAvatarStyle = (imageUrl: string | null | undefined) => {
+  if (!imageUrl) {
+    return undefined
+  }
+
+  return {
+    backgroundImage: `url(${imageUrl})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+  }
+}
+
 export function GroupsWorkspacePage() {
   const navigate = useNavigate()
   const { session } = useAuth()
@@ -92,7 +113,7 @@ export function GroupsWorkspacePage() {
 
   const [createName, setCreateName] = useState('')
   const [renameValue, setRenameValue] = useState('')
-  const [pendingImageName, setPendingImageName] = useState<string | null>(null)
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null)
   const [loadingGroups, setLoadingGroups] = useState(false)
   const [loadingDetails, setLoadingDetails] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -209,7 +230,7 @@ export function GroupsWorkspacePage() {
     setActiveGroupId(null)
     setCreateName('')
     setRenameValue('')
-    setPendingImageName(null)
+    setPendingImageFile(null)
     setGroupUsers([])
     setGroupPlaylists([])
     setGroupQr(null)
@@ -235,11 +256,14 @@ export function GroupsWorkspacePage() {
         name: nextName,
         is_public: true,
       })
+      const groupWithImage = pendingImageFile
+        ? await uploadGroupImage(accessToken, createdGroup.id, pendingImageFile)
+        : createdGroup
       setCreateName('')
-      setPendingImageName(null)
+      setPendingImageFile(null)
       setIsCreating(false)
       setIsEditMode(false)
-      await syncGroupList(accessToken, createdGroup.id)
+      await syncGroupList(accessToken, groupWithImage.id)
     } catch (error) {
       setErrorText(toUiErrorText(error))
     } finally {
@@ -262,9 +286,19 @@ export function GroupsWorkspacePage() {
     setIsSubmitting(true)
     setErrorText(null)
     try {
-      const updatedGroup = await updateGroupInfo(accessToken, activeGroup.id, {
-        name: nextName,
-      })
+      const nameChanged = nextName !== activeGroup.name
+      let updatedGroup = activeGroup
+
+      if (nameChanged) {
+        updatedGroup = await updateGroupInfo(accessToken, activeGroup.id, {
+          name: nextName,
+        })
+      }
+
+      if (pendingImageFile) {
+        updatedGroup = await uploadGroupImage(accessToken, activeGroup.id, pendingImageFile)
+      }
+
       startTransition(() => {
         setGroups((previousGroups) => {
           return sortGroupsByName(
@@ -274,7 +308,7 @@ export function GroupsWorkspacePage() {
       })
       setRenameValue(updatedGroup.name)
       setIsEditMode(false)
-      setPendingImageName(null)
+      setPendingImageFile(null)
     } catch (error) {
       setErrorText(toUiErrorText(error))
     } finally {
@@ -287,7 +321,7 @@ export function GroupsWorkspacePage() {
       return
     }
     setIsEditMode((previous) => !previous)
-    setPendingImageName(null)
+    setPendingImageFile(null)
     setErrorText(null)
   }
 
@@ -338,7 +372,7 @@ export function GroupsWorkspacePage() {
   const handleSelectGroup = (groupId: string) => {
     setIsCreating(false)
     setIsEditMode(false)
-    setPendingImageName(null)
+    setPendingImageFile(null)
     setErrorText(null)
     setActiveGroupId(groupId)
   }
@@ -371,13 +405,14 @@ export function GroupsWorkspacePage() {
 
   const handleUploadImageMock = (event: ChangeEvent<HTMLInputElement>) => {
     const nextFile = event.target.files?.[0]
-    setPendingImageName(nextFile ? nextFile.name : null)
+    setPendingImageFile(nextFile ?? null)
+    event.target.value = ''
   }
 
   const handleCancelCreate = () => {
     setIsCreating(false)
     setIsEditMode(false)
-    setPendingImageName(null)
+    setPendingImageFile(null)
     setErrorText(null)
     if (accessToken) {
       void syncGroupList(accessToken, groups[0]?.id ?? null)
@@ -385,7 +420,7 @@ export function GroupsWorkspacePage() {
   }
 
   const qrExpiryLabel = groupQr ? new Date(groupQr.expired_at).toLocaleString('ru-RU') : '—'
-  const groupImageLabel = pendingImageName ? `Файл: ${pendingImageName}` : ''
+  const groupImageLabel = pendingImageFile ? `Файл: ${pendingImageFile.name}` : ''
 
   return (
     <section className={styles.root}>
@@ -425,7 +460,7 @@ export function GroupsWorkspacePage() {
                   onClick={() => handleSelectGroup(group.id)}
                   type="button"
                 >
-                  <span className={styles.avatar} aria-hidden />
+                  <span className={styles.avatar} aria-hidden style={getGroupAvatarStyle(group.image_url)} />
                   <span className={styles.groupName}>{group.name}</span>
                 </button>
               ))
@@ -446,9 +481,14 @@ export function GroupsWorkspacePage() {
                 <div className={styles.imageUploadBlock}>
                   <label className={styles.uploadButton}>
                     Загрузить картинку
-                    <input className={styles.hiddenFileInput} onChange={handleUploadImageMock} type="file" />
+                    <input
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      className={styles.hiddenFileInput}
+                      onChange={handleUploadImageMock}
+                      type="file"
+                    />
                   </label>
-                  <p className={styles.imageUploadText}>{groupImageLabel}</p>
+                  {groupImageLabel ? <p className={styles.imageUploadText}>{groupImageLabel}</p> : null}
                 </div>
               </div>
 
@@ -493,16 +533,21 @@ export function GroupsWorkspacePage() {
             </div>
 
             <div className={styles.detailsHeader}>
-              <div className={styles.detailsAvatar} aria-hidden />
+              <div className={styles.detailsAvatar} aria-hidden style={getGroupAvatarStyle(activeGroup.image_url)} />
               <div className={styles.imageUploadBlock}>
                 {isEditMode && canManageGroup ? (
                   <label className={styles.uploadButton}>
                     Загрузить картинку
-                    <input className={styles.hiddenFileInput} onChange={handleUploadImageMock} type="file" />
+                    <input
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      className={styles.hiddenFileInput}
+                      onChange={handleUploadImageMock}
+                      type="file"
+                    />
                   </label>
                 ) : null}
                 {isEditMode && canManageGroup ? (
-                  <p className={styles.imageUploadText}>{groupImageLabel}</p>
+                  groupImageLabel ? <p className={styles.imageUploadText}>{groupImageLabel}</p> : null
                 ) : null}
               </div>
               {isEditMode && canManageGroup ? (

@@ -109,6 +109,12 @@ class GroupRepos:
         await self.session.refresh(group)
         return group
 
+    async def update_group_image(self, group: Group, *, image_url: str | None) -> Group:
+        group.image_url = image_url
+        await self.session.commit()
+        await self.session.refresh(group)
+        return group
+
     async def update_connection_role(
         self,
         *,

@@ -10,7 +10,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
-    Boolean
+    Boolean, UniqueConstraint, Index
 )
 from sqlalchemy.orm import (
     Mapped,
@@ -52,7 +52,6 @@ class Group(Base):
     Сущность Группа/Комната для совместного прослушивания.
 
     Связи:
-    - `playlist`: Один к одному с Playlist (1:1), плейлист группы.
     - `connections`: Один ко многим с Connection (1:*), участники группы.
     """
     __tablename__ = "groups"
@@ -69,10 +68,14 @@ class Group(Base):
         back_populates="group", cascade="all, delete-orphan"
     )
 
+    playlists: Mapped[List["Playlist"]] = relationship(
+        back_populates="group", cascade="all, delete-orphan"
+    )
+
     def __repr__(self) -> str:
-        return (f"Group(id={self.id}, code='{self.code}', is_active={self.is_public}, "
-        f"image_url='{self.image_url}')"
-        )
+        return (f"Group(id={self.id}, name={self.name}, is_public={self.is_public}, "
+                f"image_url='{self.image_url}')"
+                )
 
 
 class GroupQr(Base):
@@ -99,10 +102,10 @@ class Connection(Base):
 
     # Составной первичный ключ (User_ID + Group_ID)
     user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id"), primary_key=True
+        ForeignKey("users.id")
     )
     group_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("groups.id"), primary_key=True
+        ForeignKey("groups.id")
     )
     joined_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now, nullable=False
@@ -123,14 +126,18 @@ class Connection(Base):
             f"role='{self.role.name}')"
         )
 
+    __table_args__ = (
+        UniqueConstraint('user_id', 'group_id', name='uq_user_group'),
+        Index('index_user_id', 'user_id')
+    )
+
 
 class Playlist(Base):
     """
     Сущность Плейлист.
-    Тесно связан с Group (1:1).
 
     Связи:
-    - `group`: Один к одному с Group (1:1).
+    - `group`: Многие к одному с Group (1:*).
     - `tracks`: Один ко многим с Track (1:*), треки в плейлисте.
     """
     __tablename__ = "playlists"
@@ -147,6 +154,8 @@ class Playlist(Base):
     current_track_index: Mapped[int] = mapped_column(
         Integer, default=0, nullable=False
     )
+
+    group: Mapped["Group"] = relationship(back_populates="playlists")
 
     tracks: Mapped[List["Track"]] = relationship(
         back_populates="playlist", order_by="Track.added_at", cascade="all, delete-orphan"
@@ -189,12 +198,19 @@ class Track(Base):
     )
 
     title: Mapped[str] = mapped_column(String(512), nullable=False)
+
     duration: Mapped[int] = mapped_column(
         Integer, default=0, nullable=False
     )  # Продолжительность в секундах
+
     external_url: Mapped[str] = mapped_column(
         Text, nullable=False
     )  # Ссылка/ID трека на внешнем сервисе
+
+    image_url: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
+
+    audio_url: Mapped[str] = mapped_column(String(1000))
+
     added_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now, nullable=False
     )

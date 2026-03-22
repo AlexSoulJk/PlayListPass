@@ -16,6 +16,17 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "UNSAFE_DEFAULT_SECRET_CHANGE_ME"
     # Yandex Music API Client ID (нужно добавить в docker-compose или .env файл docker'а)
     YANDEX_CLIENT_ID: str = "UNSAFE_DEFAULT_YANDEX_CLIENT_ID_CHANGE"
+
+    # Настройки S3 / S3-compatible хранилища (MinIO, Yandex Object Storage, AWS S3)
+    S3_BUCKET_NAME: str = "playlistpass-media"
+    S3_REGION_NAME: str = "us-east-1"
+    S3_ENDPOINT_URL: str | None = None
+    S3_ACCESS_KEY_ID: str | None = None
+    S3_SECRET_ACCESS_KEY: str | None = None
+    S3_PUBLIC_BASE_URL: str | None = None
+    S3_PRESIGNED_PUBLIC_BASE_URL: str | None = None
+    S3_PRESIGNED_URL_TTL_SECONDS: int = 900
+
     model_config = SettingsConfigDict(extra="ignore")
 
 

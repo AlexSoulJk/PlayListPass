@@ -14,7 +14,6 @@ class GroupCreateRequest(BaseModel):
 
 class GroupUpdateRequest(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=1000)
-    image_url: str | None = None
 
 
 class GroupListItemResponse(BaseModel):
@@ -63,5 +62,27 @@ class GroupUserRoleUpdateRequest(BaseModel):
 
 
 class GroupDeleteResponse(BaseModel):
+    status: str = "deleted"
+    group_id: uuid.UUID
+
+
+class GroupImageUploadInitRequest(BaseModel):
+    filename: str = Field(min_length=1, max_length=512)
+    content_type: str | None = Field(default=None, max_length=255)
+
+
+class GroupImageUploadInitResponse(BaseModel):
+    object_key: str
+    upload_url: str
+    file_url: str
+    expires_in_seconds: int
+
+
+class GroupImageCommitRequest(BaseModel):
+    object_key: str = Field(min_length=1, max_length=2048)
+    image_url: str | None = Field(default=None, max_length=2048)
+
+
+class GroupImageDeleteResponse(BaseModel):
     status: str = "deleted"
     group_id: uuid.UUID

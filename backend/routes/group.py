@@ -10,9 +10,14 @@ from routes.deps.group_deps import (
     get_group_maintainer_connection,
     get_group_member_connection,
 )
+from routes.deps.storage_deps import get_storage_service
 from schemas.group import (
     GroupCreateRequest,
     GroupDeleteResponse,
+    GroupImageCommitRequest,
+    GroupImageDeleteResponse,
+    GroupImageUploadInitRequest,
+    GroupImageUploadInitResponse,
     GroupListItemResponse,
     GroupPlaylistItemResponse,
     GroupQrResponse,
@@ -21,6 +26,7 @@ from schemas.group import (
     GroupUserRoleUpdateRequest,
 )
 from services.group import GroupManager
+from services.storage.base import StorageServiceBase
 
 
 group_router = APIRouter(prefix="/groups", tags=["Groups"])
@@ -95,6 +101,67 @@ async def update_group_info(
     manager: GroupManager = Depends(get_group_manager),
 ) -> GroupListItemResponse:
     return await manager.update_group_info(user=user, group=group, payload=payload)
+
+
+@group_router.post(
+    "/{group_id}/image/upload-init",
+    response_model=GroupImageUploadInitResponse,
+    name="init_group_image_upload",
+)
+async def init_group_image_upload(
+    payload: GroupImageUploadInitRequest,
+    user: User = Depends(get_current_active_user),
+    group: Group = Depends(get_group_from_path),
+    _: object = Depends(get_group_maintainer_connection),
+    manager: GroupManager = Depends(get_group_manager),
+    storage_service: StorageServiceBase = Depends(get_storage_service),
+) -> GroupImageUploadInitResponse:
+    return await manager.init_group_image_upload(
+        user=user,
+        group=group,
+        payload=payload,
+        storage_service=storage_service,
+    )
+
+
+@group_router.post(
+    "/{group_id}/image/commit",
+    response_model=GroupListItemResponse,
+    name="commit_group_image_upload",
+)
+async def commit_group_image_upload(
+    payload: GroupImageCommitRequest,
+    user: User = Depends(get_current_active_user),
+    group: Group = Depends(get_group_from_path),
+    _: object = Depends(get_group_maintainer_connection),
+    manager: GroupManager = Depends(get_group_manager),
+    storage_service: StorageServiceBase = Depends(get_storage_service),
+) -> GroupListItemResponse:
+    return await manager.commit_group_image_upload(
+        user=user,
+        group=group,
+        payload=payload,
+        storage_service=storage_service,
+    )
+
+
+@group_router.delete(
+    "/{group_id}/image",
+    response_model=GroupImageDeleteResponse,
+    name="delete_group_image",
+)
+async def delete_group_image(
+    user: User = Depends(get_current_active_user),
+    group: Group = Depends(get_group_from_path),
+    _: object = Depends(get_group_maintainer_connection),
+    manager: GroupManager = Depends(get_group_manager),
+    storage_service: StorageServiceBase = Depends(get_storage_service),
+) -> GroupImageDeleteResponse:
+    return await manager.delete_group_image(
+        user=user,
+        group=group,
+        storage_service=storage_service,
+    )
 
 
 @group_router.patch(

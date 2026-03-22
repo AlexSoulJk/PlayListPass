@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from urllib.parse import urlparse
 
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
@@ -9,6 +10,10 @@ from database.models.models import Connection, Group, User
 from database.repos.group_repos import GroupRepos
 from schemas.group import (
     GroupCreateRequest,
+    GroupImageCommitRequest,
+    GroupImageDeleteResponse,
+    GroupImageUploadInitRequest,
+    GroupImageUploadInitResponse,
     GroupListItemResponse,
     GroupPlaylistItemResponse,
     GroupQrResponse,
@@ -16,6 +21,18 @@ from schemas.group import (
     GroupUserItemResponse,
     GroupUserRoleUpdateRequest,
 )
+from services.storage.base import InvalidStorageFormatError, StorageServiceBase
+from services.storage.types import StorageEntity, StorageFileFormat, StorageObjectDescriptor
+
+
+CONTENT_TYPE_TO_IMAGE_FORMAT: dict[str, StorageFileFormat] = {
+    "image/jpg": StorageFileFormat.JPG,
+    "image/jpeg": StorageFileFormat.JPEG,
+    "image/pjpeg": StorageFileFormat.JPEG,
+    "image/png": StorageFileFormat.PNG,
+    "image/x-png": StorageFileFormat.PNG,
+    "image/webp": StorageFileFormat.WEBP,
+}
 
 
 class GroupManager:
@@ -55,7 +72,7 @@ class GroupManager:
             GroupListItemResponse(
                 id=group.id,
                 name=group.name,
-                image_url=None,
+                image_url=group.image_url,
                 is_public=group.is_public,
             )
             for group in groups
@@ -68,8 +85,8 @@ class GroupManager:
         return [
             GroupPlaylistItemResponse(
                 id=playlist.id,
-                name=f"Playlist {playlist.id}",
-                image_url=None,
+                name=playlist.name,
+                image_url=playlist.image_url,
                 track_count=track_count,
             )
             for playlist, track_count in playlists_with_counts
@@ -114,7 +131,7 @@ class GroupManager:
         return GroupListItemResponse(
             id=group.id,
             name=group.name,
-            image_url=None,
+            image_url=group.image_url,
             is_public=group.is_public,
         )
 
@@ -127,12 +144,6 @@ class GroupManager:
     ) -> GroupListItemResponse:
         await self.get_maintainer_connection_or_403(user=user, group=group)
 
-        if payload.image_url is not None:
-            raise HTTPException(
-                status_code=status.HTTP_501_NOT_IMPLEMENTED,
-                detail="GROUP_IMAGE_STORAGE_NOT_IMPLEMENTED",
-            )
-
         try:
             updated_group = await self.repos.update_group(group, name=payload.name)
         except IntegrityError as error:
@@ -144,9 +155,134 @@ class GroupManager:
         return GroupListItemResponse(
             id=updated_group.id,
             name=updated_group.name,
-            image_url=None,
+            image_url=updated_group.image_url,
             is_public=updated_group.is_public,
         )
+
+    async def init_group_image_upload(
+        self,
+        *,
+        user: User,
+        group: Group,
+        payload: GroupImageUploadInitRequest,
+        storage_service: StorageServiceBase,
+    ) -> GroupImageUploadInitResponse:
+        await self.get_maintainer_connection_or_403(user=user, group=group)
+
+        file_format = self._resolve_group_image_format(
+            filename=payload.filename,
+            content_type=payload.content_type,
+        )
+        descriptor = StorageObjectDescriptor(
+            entity=StorageEntity.GROUP,
+            file_format=file_format,
+            entity_id=group.id,
+            filename=self._strip_filename_extension(payload.filename),
+        )
+
+        try:
+            object_key = storage_service.build_object_key(descriptor)
+        except InvalidStorageFormatError as error:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="GROUP_IMAGE_UNSUPPORTED_FORMAT",
+            ) from error
+
+        try:
+            upload_url = await storage_service.generate_presigned_upload_url(
+                object_key=object_key,
+                content_type=payload.content_type,
+            )
+        except Exception as error:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="STORAGE_BACKEND_NOT_AVAILABLE",
+            ) from error
+        file_url = storage_service.build_public_url(object_key=object_key)
+        return GroupImageUploadInitResponse(
+            object_key=object_key,
+            upload_url=upload_url,
+            file_url=file_url,
+            expires_in_seconds=storage_service.presigned_url_ttl_seconds,
+        )
+
+    async def commit_group_image_upload(
+        self,
+        *,
+        user: User,
+        group: Group,
+        payload: GroupImageCommitRequest,
+        storage_service: StorageServiceBase,
+    ) -> GroupListItemResponse:
+        await self.get_maintainer_connection_or_403(user=user, group=group)
+
+        object_key = payload.object_key.strip().lstrip("/")
+        if not self._is_group_object_key(group_id=group.id, object_key=object_key):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="GROUP_IMAGE_OBJECT_KEY_INVALID",
+            )
+
+        try:
+            object_exists = await storage_service.object_exists(object_key=object_key)
+        except Exception as error:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="STORAGE_BACKEND_NOT_AVAILABLE",
+            ) from error
+        if not object_exists:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="GROUP_IMAGE_OBJECT_NOT_FOUND",
+            )
+
+        previous_object_key = self._extract_object_key_from_stored_value(
+            group.image_url,
+            bucket_name=storage_service.bucket_name,
+        )
+        image_url = (
+            payload.image_url.strip()
+            if payload.image_url and payload.image_url.strip()
+            else storage_service.build_public_url(object_key=object_key)
+        )
+        updated_group = await self.repos.update_group_image(group, image_url=image_url)
+
+        if previous_object_key and previous_object_key != object_key:
+            try:
+                await storage_service.delete_object(object_key=previous_object_key)
+            except Exception:
+                # Cleanup is best-effort and should not break successful image replacement.
+                pass
+
+        return GroupListItemResponse(
+            id=updated_group.id,
+            name=updated_group.name,
+            image_url=updated_group.image_url,
+            is_public=updated_group.is_public,
+        )
+
+    async def delete_group_image(
+        self,
+        *,
+        user: User,
+        group: Group,
+        storage_service: StorageServiceBase,
+    ) -> GroupImageDeleteResponse:
+        await self.get_maintainer_connection_or_403(user=user, group=group)
+
+        object_key = self._extract_object_key_from_stored_value(
+            group.image_url,
+            bucket_name=storage_service.bucket_name,
+        )
+        if object_key:
+            try:
+                await storage_service.delete_object(object_key=object_key)
+            except Exception:
+                # Cleanup is best-effort and should not block unlinking an image in DB.
+                pass
+
+        await self.repos.update_group_image(group, image_url=None)
+        return GroupImageDeleteResponse(group_id=group.id)
 
     async def change_group_user_list(
         self,
@@ -205,3 +341,90 @@ class GroupManager:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="GROUP_NOT_FOUND",
             )
+
+    @staticmethod
+    def _resolve_group_image_format(*, filename: str, content_type: str | None) -> StorageFileFormat:
+        filename_format = GroupManager._extract_format_from_filename(filename)
+        content_type_format = GroupManager._extract_format_from_content_type(content_type)
+
+        if (
+            filename_format
+            and content_type_format
+            and GroupManager._normalize_image_format(filename_format)
+            != GroupManager._normalize_image_format(content_type_format)
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="GROUP_IMAGE_FORMAT_MISMATCH",
+            )
+
+        selected_format = filename_format or content_type_format
+        if selected_format is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="GROUP_IMAGE_UNSUPPORTED_FORMAT",
+            )
+        return selected_format
+
+    @staticmethod
+    def _extract_format_from_filename(filename: str) -> StorageFileFormat | None:
+        if "." not in filename:
+            return None
+        extension = filename.rsplit(".", maxsplit=1)[-1].lower()
+        try:
+            return StorageFileFormat(extension)
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _extract_format_from_content_type(content_type: str | None) -> StorageFileFormat | None:
+        if not content_type:
+            return None
+        normalized = content_type.split(";", maxsplit=1)[0].strip().lower()
+        return CONTENT_TYPE_TO_IMAGE_FORMAT.get(normalized)
+
+    @staticmethod
+    def _normalize_image_format(image_format: StorageFileFormat) -> StorageFileFormat:
+        if image_format == StorageFileFormat.JPG:
+            return StorageFileFormat.JPEG
+        return image_format
+
+    @staticmethod
+    def _strip_filename_extension(filename: str) -> str:
+        if "." not in filename:
+            return filename
+        return filename.rsplit(".", maxsplit=1)[0]
+
+    @staticmethod
+    def _is_group_object_key(*, group_id: uuid.UUID, object_key: str) -> bool:
+        expected_prefix = f"{StorageEntity.GROUP.value}/{group_id}/"
+        return object_key.startswith(expected_prefix)
+
+    @staticmethod
+    def _extract_object_key_from_stored_value(
+        stored_value: str | None,
+        *,
+        bucket_name: str,
+    ) -> str | None:
+        if not stored_value:
+            return None
+
+        cleaned = stored_value.strip().lstrip("/")
+        if not cleaned:
+            return None
+        if cleaned.startswith(f"{StorageEntity.GROUP.value}/"):
+            return cleaned
+
+        parsed = urlparse(cleaned)
+        path = parsed.path.lstrip("/")
+        if not path:
+            return None
+
+        bucket_prefix = f"{bucket_name.strip('/')}/"
+        if path.startswith(bucket_prefix):
+            return path[len(bucket_prefix):]
+        group_path_marker = f"{StorageEntity.GROUP.value}/"
+        marker_index = path.find(group_path_marker)
+        if marker_index >= 0:
+            return path[marker_index:]
+        return path
