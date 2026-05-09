@@ -26,7 +26,11 @@ class Settings(BaseSettings):
     S3_PUBLIC_BASE_URL: str | None = None
     S3_PRESIGNED_PUBLIC_BASE_URL: str | None = None
     S3_PRESIGNED_URL_TTL_SECONDS: int = 900
-
+    YANDEX_MVP_DATASET_DIR: Path | None = None
+    YANDEX_DB_LOADER_REPORT_PATH: Path | None = None
+    YANDEX_DB_LOADER_ENABLED: bool = False
+    YANDEX_DB_LOADER_FAIL_ON_ERROR: bool = True
+    YANDEX_DB_LOADER_DRY_RUN: bool = False
     model_config = SettingsConfigDict(extra="ignore")
 
 

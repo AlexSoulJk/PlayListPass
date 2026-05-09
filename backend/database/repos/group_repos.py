@@ -5,7 +5,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.models.base import UserRole
-from database.models.models import Connection, Group, GroupQr, Playlist, Track, User
+from database.models.models import Connection, Group, GroupQr, Playlist, PlaylistTrack, User
 
 
 class GroupRepos:
@@ -36,10 +36,10 @@ class GroupRepos:
         return list(result.scalars().all())
 
     async def list_group_playlists(self, group_id: uuid.UUID) -> list[tuple[Playlist, int]]:
-        track_count = func.count(Track.id).label("track_count")
+        track_count = func.count(PlaylistTrack.track_id).label("track_count")
         query = (
             select(Playlist, track_count)
-            .outerjoin(Track, Track.playlist_id == Playlist.id)
+            .outerjoin(PlaylistTrack, PlaylistTrack.playlist_id == Playlist.id)
             .where(Playlist.group_id == group_id)
             .group_by(Playlist.id)
             .order_by(Playlist.id.asc())
@@ -141,7 +141,9 @@ class GroupRepos:
         playlist_ids = list(playlist_ids_result.scalars().all())
 
         if playlist_ids:
-            await self.session.execute(delete(Track).where(Track.playlist_id.in_(playlist_ids)))
+            await self.session.execute(
+                delete(PlaylistTrack).where(PlaylistTrack.playlist_id.in_(playlist_ids))
+            )
             await self.session.execute(delete(Playlist).where(Playlist.id.in_(playlist_ids)))
 
         await self.session.execute(delete(GroupQr).where(GroupQr.group_id == group_id))

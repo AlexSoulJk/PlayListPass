@@ -1,2 +1,15 @@
 from .base import Base
-from .models import User, UserCredential, Connection, Group, Playlist, Track
+from .models import (
+    Artist,
+    ArtistServiceLink,
+    Connection,
+    Group,
+    GroupQr,
+    Playlist,
+    PlaylistTrack,
+    Track,
+    TrackArtist,
+    User,
+    UserCredential,
+    YandexTrack,
+)
