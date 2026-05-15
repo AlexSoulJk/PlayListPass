@@ -119,6 +119,20 @@ export function RegisterCredentialsStepForm() {
           />
         </div>
 
+        <section aria-label="Шаг пользовательских кредов" className={styles.credentialsMock}>
+          <p className={styles.credentialsMockTitle}>Шаг пользовательских кредов (mock)</p>
+          <p className={styles.credentialsMockText}>
+            Здесь будет экран подключения и ввода данных музыкального сервиса после загрузки финальных артефактов.
+          </p>
+          <div className={styles.credentialsMockPreview} aria-hidden>
+            <span className={styles.credentialsMockDot}>Y</span>
+            <span className={styles.credentialsMockLine} />
+            <span className={styles.credentialsMockDot}>S</span>
+            <span className={styles.credentialsMockLine} />
+            <span className={styles.credentialsMockDot}>YT</span>
+          </div>
+        </section>
+
         <div className={styles.buttons}>
           <AuthButtonPrimary disabled={isBusy} type="submit">
             {isBusy ? 'Обработка...' : 'Далее'}

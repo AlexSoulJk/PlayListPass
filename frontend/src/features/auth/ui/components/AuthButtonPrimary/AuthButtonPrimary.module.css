@@ -3,8 +3,8 @@
   min-height: var(--control-height);
   border-radius: 12px;
   border: 0;
-  background: var(--color-black);
-  color: var(--color-white);
+  background: var(--auth-primary-bg);
+  color: var(--auth-primary-text);
   font-family: var(--font-brand);
   font-size: 1rem;
   font-weight: 600;

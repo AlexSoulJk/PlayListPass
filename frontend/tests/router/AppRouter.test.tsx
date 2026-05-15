@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import { AuthContext } from '../../src/app/providers/authContext'
 import { AppRouter } from '../../src/app/router/AppRouter'
+import { ThemeProvider } from '../../src/app/theme/ThemeProvider'
 import { createAuthContextValue } from '../utils/createAuthContextValue'
 
 describe('AppRouter', () => {
@@ -11,9 +12,11 @@ describe('AppRouter', () => {
 
     render(
       <MemoryRouter initialEntries={['/app']}>
-        <AuthContext.Provider value={authValue}>
-          <AppRouter />
-        </AuthContext.Provider>
+        <ThemeProvider>
+          <AuthContext.Provider value={authValue}>
+            <AppRouter />
+          </AuthContext.Provider>
+        </ThemeProvider>
       </MemoryRouter>,
     )
 
@@ -33,9 +36,11 @@ describe('AppRouter', () => {
 
     render(
       <MemoryRouter initialEntries={['/auth/login']}>
-        <AuthContext.Provider value={authValue}>
-          <AppRouter />
-        </AuthContext.Provider>
+        <ThemeProvider>
+          <AuthContext.Provider value={authValue}>
+            <AppRouter />
+          </AuthContext.Provider>
+        </ThemeProvider>
       </MemoryRouter>,
     )
 

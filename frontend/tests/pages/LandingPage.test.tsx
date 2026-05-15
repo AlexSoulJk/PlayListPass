@@ -13,7 +13,7 @@ describe('LandingPage', () => {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/auth/login" element={<div>login-route</div>} />
-          <Route path="/auth/register/email" element={<div>register-route</div>} />
+          <Route path="/auth/register" element={<div>register-route</div>} />
         </Routes>
       </MemoryRouter>,
     )
@@ -31,7 +31,7 @@ describe('LandingPage', () => {
       <MemoryRouter initialEntries={['/']}>
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/auth/register/email" element={<div>register-route</div>} />
+          <Route path="/auth/register" element={<div>register-route</div>} />
         </Routes>
       </MemoryRouter>,
     )

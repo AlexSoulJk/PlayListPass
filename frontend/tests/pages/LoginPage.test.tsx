@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { AuthContext } from '../../src/app/providers/authContext'
+import { ThemeProvider } from '../../src/app/theme/ThemeProvider'
 import { AuthApiError } from '../../src/features/auth/api/authApi'
 import { LoginPage } from '../../src/features/auth/ui/pages/LoginPage/LoginPage'
 import { createAuthContextValue } from '../utils/createAuthContextValue'
@@ -16,9 +17,11 @@ describe('LoginPage', () => {
 
     render(
       <MemoryRouter>
-        <AuthContext.Provider value={authValue}>
-          <LoginPage />
-        </AuthContext.Provider>
+        <ThemeProvider>
+          <AuthContext.Provider value={authValue}>
+            <LoginPage />
+          </AuthContext.Provider>
+        </ThemeProvider>
       </MemoryRouter>,
     )
 

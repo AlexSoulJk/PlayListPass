@@ -1,4 +1,14 @@
 :root {
+  --font-brand: 'Inter', 'Segoe UI', Arial, sans-serif;
+  --font-body: 'Roboto', 'Segoe UI', Arial, sans-serif;
+
+  --auth-card-width: 420px;
+  --auth-card-radius: 25px;
+  --control-height: 70px;
+
+  --color-white: #ffffff;
+  --color-black: #000000;
+
   --color-outline: #79747e;
   --color-outline-variant: #cac4d0;
   --color-surface: #fef7ff;
@@ -6,17 +16,43 @@
   --color-surface-tint: rgba(255, 255, 255, 0.5);
   --color-on-surface: #1d1b20;
   --color-on-surface-variant: #49454f;
-  --color-white: #ffffff;
-  --color-black: #000000;
   --color-error: #d90429;
 
-  --font-brand: "Inter", "Segoe UI", Arial, sans-serif;
-  --font-body: "Roboto", "Segoe UI", Arial, sans-serif;
+  --workspace-page-bg: linear-gradient(145deg, #780101 0%, #5a0101 44%, #440101 100%);
+  --workspace-sidebar-bg: rgba(20, 0, 0, 0.5);
+  --workspace-sidebar-border: rgba(255, 255, 255, 0.14);
+  --workspace-panel-bg: rgba(0, 0, 0, 0.18);
+  --workspace-panel-border: rgba(255, 255, 255, 0.12);
+  --workspace-panel-bg-hover: rgba(0, 0, 0, 0.32);
+  --workspace-panel-bg-active: #090909;
+  --workspace-panel-border-active: rgba(255, 255, 255, 0.2);
+  --workspace-header-bg: rgba(22, 0, 0, 0.45);
+  --workspace-header-border: rgba(255, 255, 255, 0.22);
+  --workspace-badge-bg: rgba(255, 255, 255, 0.08);
+  --workspace-badge-border: rgba(255, 255, 255, 0.22);
+  --workspace-footer-bg: rgba(0, 0, 0, 0.22);
+  --workspace-footer-border: rgba(255, 255, 255, 0.16);
 
-  --window-width: 905px;
-  --window-height: 680px;
-  --browser-bar-height: 68px;
-  --auth-card-width: 420px;
-  --auth-card-radius: 25px;
-  --control-height: 70px;
+  --auth-card-bg: var(--color-surface-tint);
+  --auth-card-border: var(--color-black);
+  --auth-card-shadow: none;
+  --auth-brand-color: var(--color-black);
+  --auth-input-bg: var(--color-white);
+  --auth-input-text: var(--color-on-surface);
+  --auth-placeholder: var(--color-on-surface);
+  --auth-primary-bg: var(--color-black);
+  --auth-primary-text: var(--color-white);
+  --auth-secondary-bg: transparent;
+  --auth-secondary-text: var(--color-black);
+  --auth-secondary-border: var(--color-black);
+  --auth-link-color: #2ea4de;
+
+  --service-pill-bg: #111111;
+  --service-pill-border: rgba(255, 255, 255, 0.18);
+  --service-pill-text: #ffffff;
+
+  --theme-toggle-dark: #050505;
+  --theme-toggle-red: #c01717;
+  --theme-toggle-border: rgba(255, 255, 255, 0.28);
+  --theme-toggle-bg: rgba(0, 0, 0, 0.2);
 }

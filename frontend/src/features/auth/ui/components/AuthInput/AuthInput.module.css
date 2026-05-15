@@ -15,8 +15,8 @@
   min-height: var(--control-height);
   border-radius: 10px;
   border: 1px solid transparent;
-  background: var(--color-white);
-  color: var(--color-on-surface);
+  background: var(--auth-input-bg);
+  color: var(--auth-input-text);
   font-family: var(--font-body);
   font-size: 1rem;
   line-height: 1.2;
@@ -29,7 +29,7 @@
 }
 
 .input::placeholder {
-  color: var(--color-on-surface);
+  color: var(--auth-placeholder);
 }
 
 .input:focus-visible {
@@ -54,7 +54,7 @@
   display: grid;
   place-items: center;
   cursor: pointer;
-  color: var(--color-on-surface);
+  color: var(--auth-input-text);
 }
 
 .passwordToggle:focus-visible {

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../../../app/providers/useAuth'
+import { ThemeToggle } from '../../../../../shared/ui/ThemeToggle/ThemeToggle'
 import styles from './MainWorkspaceLayout.module.css'
 
 type WorkspaceNavItem = {
@@ -90,6 +91,10 @@ export function MainWorkspaceLayout() {
             </NavLink>
           ))}
         </nav>
+
+        <div className={styles.themeToggleWrap}>
+          <ThemeToggle />
+        </div>
 
         <button className={styles.logoutButton} onClick={handleLogout} type="button">
           Выйти

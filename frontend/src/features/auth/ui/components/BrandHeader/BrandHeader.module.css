@@ -1,6 +1,6 @@
 .header {
   text-align: center;
-  color: var(--color-black);
+  color: var(--auth-brand-color);
   margin-bottom: 44px;
 }
 

@@ -1,6 +1,7 @@
 import { useEffect, useReducer, type PropsWithChildren } from 'react'
 import { AuthApiError, login, register } from '../../features/auth/api/authApi'
 import { clearStoredSession, loadStoredSession, saveStoredSession } from '../../features/auth/authStorage'
+import { clearServiceConnectionPending } from '../../features/auth/serviceConnectionAccess'
 import type {
   AuthSession,
   AuthStatus,
@@ -92,6 +93,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const signIn = async (payload: LoginPayload) => {
     try {
       const session = await login(payload)
+      clearServiceConnectionPending()
       saveStoredSession(session)
       dispatch({ type: 'SIGN_IN', session })
     } catch (error) {
@@ -112,6 +114,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }
 
   const signOut = () => {
+    clearServiceConnectionPending()
     clearStoredSession()
     dispatch({ type: 'SIGN_OUT' })
   }

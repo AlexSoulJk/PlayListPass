@@ -19,7 +19,7 @@ export function LandingPage() {
             <AuthButtonPrimary className={styles.primaryAction} onClick={() => navigate('/auth/login')} type="button">
               Войти
             </AuthButtonPrimary>
-            <AuthButtonSecondary className={styles.secondaryAction} onClick={() => navigate('/auth/register/email')} type="button">
+            <AuthButtonSecondary className={styles.secondaryAction} onClick={() => navigate('/auth/register')} type="button">
               Регистрация
             </AuthButtonSecondary>
           </div>

@@ -2,9 +2,9 @@
   width: 100%;
   min-height: var(--control-height);
   border-radius: 12px;
-  border: 2px solid var(--color-black);
-  background: transparent;
-  color: var(--color-black);
+  border: 2px solid var(--auth-secondary-border);
+  background: var(--auth-secondary-bg);
+  color: var(--auth-secondary-text);
   font-family: var(--font-brand);
   font-size: 1rem;
   font-weight: 600;

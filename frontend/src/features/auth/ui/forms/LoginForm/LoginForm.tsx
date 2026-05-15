@@ -7,7 +7,6 @@ import { useAuth } from '../../../../../app/providers/useAuth'
 import { AuthApiError } from '../../../api/authApi'
 import type { AuthErrorCode } from '../../../types'
 import { AuthButtonPrimary } from '../../components/AuthButtonPrimary/AuthButtonPrimary'
-import { AuthButtonSecondary } from '../../components/AuthButtonSecondary/AuthButtonSecondary'
 import { AuthInlineError } from '../../components/AuthInlineError/AuthInlineError'
 import { AuthInput } from '../../components/AuthInput/AuthInput'
 import styles from './LoginForm.module.css'
@@ -74,7 +73,7 @@ export function LoginForm() {
           id="login-email"
           label="Почта"
           type="email"
-          placeholder="Введите почту или номер телефона"
+          placeholder="Введите почту"
           autoComplete="email"
           errorMessage={emailError}
         />
@@ -93,9 +92,6 @@ export function LoginForm() {
         <AuthButtonPrimary disabled={submitDisabled} type="submit">
           {submitDisabled ? 'Вход...' : 'Войти'}
         </AuthButtonPrimary>
-        <AuthButtonSecondary onClick={() => navigate('/')} type="button">
-          Назад
-        </AuthButtonSecondary>
       </div>
 
       {authError === 'NETWORK_ERROR' ? (

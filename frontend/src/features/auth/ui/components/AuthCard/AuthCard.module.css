@@ -1,7 +1,8 @@
 .card {
   width: min(100%, var(--auth-card-width));
   border-radius: var(--auth-card-radius);
-  border: 5px solid var(--color-black);
-  background: var(--color-surface-tint);
+  border: 1px solid var(--auth-card-border);
+  background: var(--auth-card-bg);
+  box-shadow: var(--auth-card-shadow);
   padding: 24px;
 }
