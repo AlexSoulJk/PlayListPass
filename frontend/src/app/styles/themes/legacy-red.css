@@ -1,0 +1,48 @@
+:root[data-theme='red'] {
+  --color-outline: #79747e;
+  --color-outline-variant: #cac4d0;
+  --color-surface: #fef7ff;
+  --color-surface-container: #f3edf7;
+  --color-surface-tint: rgba(255, 255, 255, 0.5);
+  --color-on-surface: #f5f5f5;
+  --color-on-surface-variant: #d7d7d7;
+  --color-error: #d90429;
+
+  --workspace-page-bg: linear-gradient(145deg, #780101 0%, #5a0101 44%, #440101 100%);
+  --workspace-sidebar-bg: rgba(20, 0, 0, 0.5);
+  --workspace-sidebar-border: rgba(255, 255, 255, 0.14);
+  --workspace-panel-bg: rgba(0, 0, 0, 0.18);
+  --workspace-panel-border: rgba(255, 255, 255, 0.12);
+  --workspace-panel-bg-hover: rgba(0, 0, 0, 0.32);
+  --workspace-panel-bg-active: #090909;
+  --workspace-panel-border-active: rgba(255, 255, 255, 0.2);
+  --workspace-header-bg: rgba(22, 0, 0, 0.45);
+  --workspace-header-border: rgba(255, 255, 255, 0.22);
+  --workspace-badge-bg: rgba(255, 255, 255, 0.08);
+  --workspace-badge-border: rgba(255, 255, 255, 0.22);
+  --workspace-footer-bg: rgba(0, 0, 0, 0.22);
+  --workspace-footer-border: rgba(255, 255, 255, 0.16);
+
+  --auth-card-bg: rgba(255, 255, 255, 0.52);
+  --auth-card-border: #000000;
+  --auth-card-shadow: none;
+  --auth-brand-color: #000000;
+  --auth-input-bg: #ffffff;
+  --auth-input-text: #1d1b20;
+  --auth-placeholder: #1d1b20;
+  --auth-primary-bg: #000000;
+  --auth-primary-text: #ffffff;
+  --auth-secondary-bg: transparent;
+  --auth-secondary-text: #000000;
+  --auth-secondary-border: #000000;
+  --auth-link-color: #2ea4de;
+
+  --service-pill-bg: #111111;
+  --service-pill-border: rgba(255, 255, 255, 0.18);
+  --service-pill-text: #ffffff;
+
+  --theme-toggle-dark: #000000;
+  --theme-toggle-red: #cc2a2a;
+  --theme-toggle-border: rgba(255, 255, 255, 0.3);
+  --theme-toggle-bg: rgba(0, 0, 0, 0.2);
+}

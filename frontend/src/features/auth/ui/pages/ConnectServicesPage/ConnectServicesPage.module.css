@@ -1,0 +1,91 @@
+.root {
+  max-width: 640px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.18);
+  padding: 24px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: 1.8rem;
+  line-height: 1.15;
+}
+
+.subtitle {
+  margin: 10px 0 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.95rem;
+}
+
+.services {
+  margin-top: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.serviceButton {
+  min-height: 58px;
+  border-radius: 999px;
+  border: 1px solid var(--service-pill-border);
+  background: var(--service-pill-bg);
+  color: var(--service-pill-text);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  font-size: 1.02rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.serviceButton:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 2px;
+}
+
+.serviceIcon {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.08);
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.credentialsMock {
+  margin-top: 14px;
+  border-radius: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.36);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 12px;
+}
+
+.credentialsTitle {
+  margin: 0;
+  font-size: 0.96rem;
+}
+
+.credentialsText {
+  margin: 6px 0 0;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.skipButton {
+  margin-top: 14px;
+  width: 100%;
+  min-height: 52px;
+  border-radius: 12px;
+  border: 0;
+  background: var(--auth-primary-bg);
+  color: var(--auth-primary-text);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+

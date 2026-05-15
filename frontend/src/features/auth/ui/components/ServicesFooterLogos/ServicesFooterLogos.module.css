@@ -1,0 +1,59 @@
+.root {
+  width: min(960px, 100%);
+  margin-top: auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.pill {
+  min-height: 56px;
+  border-radius: 999px;
+  border: 1px solid var(--service-pill-border);
+  background: var(--service-pill-bg);
+  color: var(--service-pill-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 16px;
+  text-decoration: none;
+  transition: transform 120ms ease, border-color 120ms ease, background-color 120ms ease;
+}
+
+.pill:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.pill:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.82);
+  outline-offset: 2px;
+}
+
+.icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.label {
+  font-size: 1rem;
+  line-height: 1;
+  font-weight: 600;
+}
+
+@media (max-width: 780px) {
+  .root {
+    grid-template-columns: 1fr;
+  }
+
+  .pill {
+    min-height: 48px;
+  }
+}

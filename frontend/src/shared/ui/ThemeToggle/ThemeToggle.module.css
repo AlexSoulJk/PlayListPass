@@ -1,0 +1,59 @@
+.root {
+  border-radius: 12px;
+  border: 1px solid var(--theme-toggle-border);
+  background: var(--theme-toggle-bg);
+  padding: 10px 12px;
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.button {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.button:hover {
+  border-color: rgba(255, 255, 255, 0.34);
+}
+
+.buttonActive {
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+.button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: 2px;
+}
+
+.darkCircle,
+.redCircle {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.darkCircle {
+  background: var(--theme-toggle-dark);
+}
+
+.redCircle {
+  background: var(--theme-toggle-red);
+}
+

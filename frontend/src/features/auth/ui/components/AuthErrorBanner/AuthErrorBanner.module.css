@@ -1,0 +1,15 @@
+.banner {
+  margin: 0 0 12px;
+  min-height: 36px;
+  border-radius: 12px;
+  border: 2px solid var(--color-error);
+  background: rgba(160, 112, 112, 0.45);
+  color: var(--color-error);
+  font-size: 0.98rem;
+  line-height: 1.25;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 6px 10px;
+}
+
