@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { AuthContext } from '../../src/app/providers/authContext'
+import { PlaybackProvider } from '../../src/app/providers/PlaybackProvider'
 import { ThemeProvider } from '../../src/app/theme/ThemeProvider'
 import { MainWorkspaceLayout } from '../../src/features/main/ui/layout/MainWorkspaceLayout/MainWorkspaceLayout'
 import { createAuthContextValue } from '../utils/createAuthContextValue'
@@ -25,12 +26,14 @@ describe('MainWorkspaceLayout', () => {
       <MemoryRouter initialEntries={['/app']}>
         <ThemeProvider>
           <AuthContext.Provider value={authValue}>
-            <Routes>
-              <Route path="/app" element={<MainWorkspaceLayout />}>
-                <Route index element={<div>workspace-route</div>} />
-              </Route>
-              <Route path="/" element={<div>landing-route</div>} />
-            </Routes>
+            <PlaybackProvider>
+              <Routes>
+                <Route path="/app" element={<MainWorkspaceLayout />}>
+                  <Route index element={<div>workspace-route</div>} />
+                </Route>
+                <Route path="/" element={<div>landing-route</div>} />
+              </Routes>
+            </PlaybackProvider>
           </AuthContext.Provider>
         </ThemeProvider>
       </MemoryRouter>,

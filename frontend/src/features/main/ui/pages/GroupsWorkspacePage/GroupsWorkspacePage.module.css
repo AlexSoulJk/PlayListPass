@@ -1,32 +1,32 @@
 .root {
   display: grid;
-  grid-template-columns: 336px minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: 350px minmax(0, 1fr);
+  gap: 18px;
   height: 100%;
   position: relative;
 }
 
 .groupListSection,
 .detailsSection {
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(15, 0, 0, 0.46);
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(14, 0, 0, 0.5);
 }
 
 .groupListSection {
   padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   min-height: 0;
 }
 
 .groupListHeader {
-  min-height: 72px;
-  border-radius: 16px;
+  min-height: 74px;
+  border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(0, 0, 0, 0.2);
-  padding: 0 14px;
+  background: rgba(0, 0, 0, 0.26);
+  padding: 0 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -35,23 +35,34 @@
 .groupListTitle {
   margin: 0;
   font-family: var(--font-brand);
-  font-size: 1.32rem;
+  font-size: 1.4rem;
   font-weight: 700;
 }
 
 .editButton {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  border: 0;
-  background: rgba(0, 0, 0, 0.28);
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.35);
   color: inherit;
   cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.editButton:hover {
+  border-color: rgba(255, 255, 255, 0.32);
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.editButton:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.42);
+  outline-offset: 2px;
 }
 
 .editButton svg {
-  width: 22px;
-  height: 22px;
+  width: 23px;
+  height: 23px;
   fill: none;
   stroke: currentColor;
   stroke-width: 2;
@@ -61,17 +72,18 @@
 
 .errorText {
   margin: 0;
-  padding: 8px 10px;
-  border-radius: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
   background: rgba(178, 7, 7, 0.24);
   color: #ffb8b8;
-  font-size: 0.86rem;
+  font-size: 0.9rem;
+  line-height: 1.35;
 }
 
 .groupList {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   overflow: auto;
   padding-right: 4px;
 }
@@ -79,15 +91,15 @@
 .emptyState {
   margin: 0;
   color: rgba(255, 255, 255, 0.84);
-  font-size: 0.92rem;
+  font-size: 0.94rem;
   line-height: 1.4;
 }
 
 .groupCard {
-  min-height: 82px;
+  min-height: 86px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(20, 0, 0, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.17);
+  background: rgba(20, 0, 0, 0.46);
   color: inherit;
   display: flex;
   align-items: center;
@@ -95,17 +107,34 @@
   padding: 0 14px;
   cursor: pointer;
   text-align: left;
+  transition: transform 120ms ease, background-color 120ms ease, border-color 120ms ease;
+}
+
+.groupCard:hover {
+  background: rgba(5, 5, 5, 0.6);
+  border-color: rgba(255, 255, 255, 0.27);
+  transform: translateY(-1px);
+}
+
+.groupCard:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.4);
+  outline-offset: 2px;
 }
 
 .groupCardActive {
-  background: #000000;
+  background: rgba(0, 0, 0, 0.92);
+  border-color: rgba(255, 255, 255, 0.34);
 }
 
 .avatar {
-  width: 52px;
-  height: 52px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.28);
   background: radial-gradient(circle at 40% 35%, #eceaea, #c7c4ca 60%, #a9a5ac 100%);
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
 }
 
 .groupName {
@@ -114,7 +143,7 @@
 }
 
 .detailsSection {
-  padding: 14px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -129,25 +158,36 @@
 .modeBadge {
   display: inline-flex;
   align-items: center;
-  min-height: 34px;
-  padding: 0 12px;
+  min-height: 36px;
+  padding: 0 14px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(0, 0, 0, 0.3);
-  font-size: 0.82rem;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(0, 0, 0, 0.38);
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 
 .pencilButton {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(0, 0, 0, 0.32);
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  background: rgba(0, 0, 0, 0.34);
   color: inherit;
   cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.pencilButton:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.pencilButton:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.42);
+  outline-offset: 2px;
 }
 
 .pencilButton svg {
@@ -164,21 +204,23 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .detailsAvatar {
-  width: 128px;
-  height: 128px;
+  width: 136px;
+  height: 136px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   background: rgba(193, 188, 194, 0.32);
+  background-size: cover;
+  background-position: center;
 }
 
 .detailsName {
   margin: 0;
   font-family: var(--font-brand);
-  font-size: 2rem;
+  font-size: clamp(2rem, 4.4vw, 2.4rem);
   line-height: 1.1;
   text-align: center;
 }
@@ -191,16 +233,21 @@
 }
 
 .uploadButton {
-  min-height: 34px;
+  min-height: 36px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  background: rgba(0, 0, 0, 0.36);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(0, 0, 0, 0.4);
   color: inherit;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-weight: 600;
   line-height: 1;
   padding: 9px 12px;
   cursor: pointer;
+  transition: border-color 120ms ease;
+}
+
+.uploadButton:hover {
+  border-color: rgba(255, 255, 255, 0.42);
 }
 
 .hiddenFileInput {
@@ -218,54 +265,66 @@
 .createDetailsForm,
 .renameForm {
   width: 100%;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(8, 0, 0, 0.48);
-  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(8, 0, 0, 0.52);
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .renameLabel {
-  font-size: 0.84rem;
+  font-size: 0.86rem;
   color: rgba(255, 255, 255, 0.82);
 }
 
 .renameControls {
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
 .renameInput {
   width: 100%;
-  min-height: 40px;
+  min-height: 42px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.24);
   background: rgba(11, 0, 0, 0.72);
   color: inherit;
   padding: 0 12px;
+  outline: 0;
+}
+
+.renameInput:focus-visible {
+  border-color: rgba(255, 255, 255, 0.54);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15);
 }
 
 .renameButton {
-  min-height: 40px;
+  min-height: 42px;
   border: 0;
   border-radius: 10px;
-  background: #160000;
+  background: #0e0e0e;
   color: #fff;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   font-weight: 700;
   padding: 0 14px;
   cursor: pointer;
+  white-space: nowrap;
+  transition: filter 120ms ease;
+}
+
+.renameButton:hover {
+  filter: brightness(1.08);
 }
 
 .formActions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
 .secondaryButton {
-  min-height: 40px;
+  min-height: 42px;
   border: 1px solid rgba(255, 255, 255, 0.24);
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.3);
@@ -274,52 +333,76 @@
   font-weight: 600;
   padding: 0 14px;
   cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.secondaryButton:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.45);
 }
 
 .linkBlocks {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .linkBlock {
   width: 100%;
-  min-height: 56px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(8, 0, 0, 0.5);
+  min-height: 58px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(8, 0, 0, 0.56);
   color: inherit;
   padding: 0 16px;
-  font-size: 1.03rem;
+  font-size: 1rem;
   font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.linkBlock:hover {
+  border-color: rgba(255, 255, 255, 0.34);
+  background: rgba(0, 0, 0, 0.62);
+}
+
+.linkBlock:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.4);
+  outline-offset: 2px;
 }
 
 .linkArrow {
-  font-size: 1rem;
+  font-size: 1.2rem;
   line-height: 1;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.88);
 }
 
 .membersCard {
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.17);
-  background: rgba(8, 0, 0, 0.48);
-  padding: 8px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(8, 0, 0, 0.54);
+  padding: 6px 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
+  min-height: 180px;
 }
 
 .memberRow {
-  min-height: 62px;
+  min-height: 64px;
   display: grid;
   grid-template-columns: 52px 1fr auto;
   align-items: center;
   gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.memberRow:last-child {
+  border-bottom: 0;
 }
 
 .memberAvatar {
@@ -331,57 +414,126 @@
 
 .memberName {
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 650;
+  line-height: 1.2;
+  word-break: break-word;
 }
 
 .memberActions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: flex-end;
-  gap: 6px;
+  gap: 10px;
 }
 
 .memberRole {
-  color: #ff1d1d;
+  color: #ff2929;
   font-weight: 700;
   text-transform: lowercase;
+  font-size: 0.93rem;
 }
 
-.memberRoleButton {
+.roleMenuWrap {
+  position: relative;
+}
+
+.roleMenuToggle {
+  width: 30px;
+  height: 30px;
   border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.36);
-  color: #fff;
-  font-size: 0.75rem;
-  line-height: 1;
-  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #ffffff;
   cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  display: grid;
+  place-items: center;
 }
 
-.permissionHint {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 0.87rem;
+.roleMenuToggle:hover {
+  border-color: rgba(255, 255, 255, 0.42);
+}
+
+.roleMenuToggle:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.42);
+  outline-offset: 2px;
+}
+
+.roleMenu {
+  position: absolute;
+  top: 34px;
+  right: 0;
+  z-index: 5;
+  min-width: 132px;
+  padding: 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: #090909;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.roleMenuItem {
+  min-height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  padding: 0 10px;
+  cursor: pointer;
+  text-transform: lowercase;
+  font-size: 0.86rem;
+}
+
+.roleMenuItem:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.roleMenuItemActive {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.deleteButton,
+.mockActionButton {
+  margin-top: auto;
+  width: 100%;
+  min-height: 56px;
+  border-radius: 14px;
+  font-size: 1.18rem;
+  font-weight: 700;
 }
 
 .deleteButton {
-  margin-top: auto;
-  width: 100%;
-  min-height: 54px;
-  border-radius: 14px;
   border: 0;
-  background: #050505;
+  background: #080808;
   color: #fe1111;
-  font-size: 1.3rem;
-  font-weight: 700;
   cursor: pointer;
+  transition: filter 120ms ease;
+}
+
+.deleteButton:hover {
+  filter: brightness(1.1);
+}
+
+.mockActionButton {
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.33);
+  color: #fff;
+  cursor: not-allowed;
+  opacity: 0.72;
 }
 
 .editButton:disabled,
 .pencilButton:disabled,
 .renameButton:disabled,
 .secondaryButton:disabled,
-.memberRoleButton:disabled,
+.roleMenuToggle:disabled,
+.roleMenuItem:disabled,
 .deleteButton:disabled {
   opacity: 0.55;
   cursor: not-allowed;
@@ -399,10 +551,10 @@
 
 .modalCard {
   width: min(560px, 100%);
-  border-radius: 16px;
+  border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: #150707;
-  padding: 18px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -431,11 +583,11 @@
 
 .modalActions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
 .modalLinkButton {
-  min-height: 40px;
+  min-height: 42px;
   border-radius: 10px;
   border: 0;
   background: #260000;
@@ -446,6 +598,33 @@
   text-decoration: none;
 }
 
+.modalDangerButton {
+  min-height: 42px;
+  border-radius: 10px;
+  border: 0;
+  background: #080808;
+  color: #ff2b2b;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: filter 120ms ease;
+}
+
+.modalDangerButton:hover {
+  filter: brightness(1.1);
+}
+
+.modalDangerButton:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.42);
+  outline-offset: 2px;
+}
+
+.modalDangerButton:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 @media (max-width: 1240px) {
   .root {
     grid-template-columns: 1fr;
@@ -453,20 +632,8 @@
 }
 
 @media (max-width: 760px) {
-  .detailsName {
-    font-size: 1.5rem;
-  }
-
-  .deleteButton {
-    font-size: 1.05rem;
-  }
-
   .groupCard {
     border-radius: 20px;
-  }
-
-  .memberRow {
-    grid-template-columns: 44px 1fr;
   }
 
   .memberAvatar {
@@ -474,10 +641,21 @@
     height: 44px;
   }
 
+  .memberRow {
+    grid-template-columns: 44px 1fr;
+    align-items: start;
+    gap: 10px;
+  }
+
   .memberActions {
     grid-column: 1 / -1;
     align-items: flex-start;
     margin-left: 56px;
+  }
+
+  .deleteButton,
+  .mockActionButton {
+    font-size: 1.02rem;
   }
 
   .renameControls,

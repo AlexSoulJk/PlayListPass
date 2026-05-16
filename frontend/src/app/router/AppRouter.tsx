@@ -9,6 +9,7 @@ import { PlaylistsWorkspacePage } from '../../features/main/ui/pages/PlaylistsWo
 import { ProfileWorkspacePage } from '../../features/main/ui/pages/ProfileWorkspacePage/ProfileWorkspacePage'
 import { SearchWorkspacePage } from '../../features/main/ui/pages/SearchWorkspacePage/SearchWorkspacePage'
 import { ServiceConnectionPage } from '../../features/main/ui/pages/ServiceConnectionPage/ServiceConnectionPage'
+import { PlaybackProvider } from '../providers/PlaybackProvider'
 import { useAuth } from '../providers/useAuth'
 import { ProtectedRoute } from './ProtectedRoute'
 
@@ -54,7 +55,9 @@ export function AppRouter() {
         path="/app"
         element={
           <ProtectedRoute>
-            <MainWorkspaceLayout />
+            <PlaybackProvider>
+              <MainWorkspaceLayout />
+            </PlaybackProvider>
           </ProtectedRoute>
         }
       >

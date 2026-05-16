@@ -29,6 +29,8 @@ const roleLabel: Record<GroupRole, string> = {
   VIEWER: 'viewer',
 }
 
+const mutableRoles: GroupMutableRole[] = ['GUEST', 'VIEWER']
+
 const sortGroupsByName = (groups: GroupListItem[]): GroupListItem[] => {
   return [...groups].sort((left, right) => left.name.localeCompare(right.name, 'ru-RU'))
 }
@@ -70,21 +72,6 @@ const toUiErrorText = (error: unknown): string => {
   }
 }
 
-const getNextMutableRole = (role: GroupRole): GroupMutableRole | null => {
-  if (role === 'GUEST') {
-    return 'VIEWER'
-  }
-  if (role === 'VIEWER') {
-    return 'GUEST'
-  }
-  return null
-}
-
-const roleChangeLabel: Record<GroupMutableRole, string> = {
-  GUEST: 'Сделать guest',
-  VIEWER: 'Сделать viewer',
-}
-
 const getGroupAvatarStyle = (imageUrl: string | null | undefined) => {
   if (!imageUrl) {
     return undefined
@@ -96,6 +83,27 @@ const getGroupAvatarStyle = (imageUrl: string | null | undefined) => {
     backgroundPosition: 'center',
   }
 }
+
+const toRoleName = (role: GroupMutableRole): string => {
+  return role === 'GUEST' ? 'guest' : 'viewer'
+}
+
+const normalizeEmail = (email: string | null | undefined): string => {
+  return (email ?? '').trim().toLowerCase()
+}
+
+type ConfirmDialogState =
+  | {
+      type: 'delete-group'
+      groupId: string
+      groupName: string
+    }
+  | {
+      type: 'change-role'
+      memberId: string
+      memberName: string
+      nextRole: GroupMutableRole
+    }
 
 export function GroupsWorkspacePage() {
   const navigate = useNavigate()
@@ -118,17 +126,20 @@ export function GroupsWorkspacePage() {
   const [loadingDetails, setLoadingDetails] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [pendingRoleUserId, setPendingRoleUserId] = useState<string | null>(null)
+  const [openedRoleMenuUserId, setOpenedRoleMenuUserId] = useState<string | null>(null)
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null)
+  const [isConfirmSubmitting, setIsConfirmSubmitting] = useState(false)
   const [errorText, setErrorText] = useState<string | null>(null)
 
   const accessToken = session?.accessToken ?? null
   const activeGroup = groups.find((group) => group.id === activeGroupId) ?? null
-  const currentUser = groupUsers.find((member) => member.email === session?.email) ?? null
-  const canManageGroup = currentUser?.role === 'MAINTAINER'
+  const sessionEmailNormalized = normalizeEmail(session?.email)
+  const currentUser =
+    groupUsers.find((member) => normalizeEmail(member.email) === sessionEmailNormalized) ?? null
+  const currentUserRole = currentUser?.role ?? null
+  const canManageGroup = currentUserRole === 'MAINTAINER'
 
-  const syncGroupList = async (
-    token: string,
-    preferredGroupId: string | null = null,
-  ): Promise<void> => {
+  const syncGroupList = async (token: string, preferredGroupId: string | null = null): Promise<void> => {
     setLoadingGroups(true)
     setErrorText(null)
     try {
@@ -160,6 +171,7 @@ export function GroupsWorkspacePage() {
       setGroupPlaylists([])
       setGroupQr(null)
       setIsQrModalOpen(false)
+      setConfirmDialog(null)
       return
     }
 
@@ -227,6 +239,7 @@ export function GroupsWorkspacePage() {
   const handleOpenCreateMode = () => {
     setIsCreating(true)
     setIsEditMode(true)
+    setOpenedRoleMenuUserId(null)
     setActiveGroupId(null)
     setCreateName('')
     setRenameValue('')
@@ -234,6 +247,7 @@ export function GroupsWorkspacePage() {
     setGroupUsers([])
     setGroupPlaylists([])
     setGroupQr(null)
+    setConfirmDialog(null)
     setErrorText(null)
   }
 
@@ -301,9 +315,7 @@ export function GroupsWorkspacePage() {
 
       startTransition(() => {
         setGroups((previousGroups) => {
-          return sortGroupsByName(
-            previousGroups.map((group) => (group.id === updatedGroup.id ? updatedGroup : group)),
-          )
+          return sortGroupsByName(previousGroups.map((group) => (group.id === updatedGroup.id ? updatedGroup : group)))
         })
       })
       setRenameValue(updatedGroup.name)
@@ -322,56 +334,105 @@ export function GroupsWorkspacePage() {
     }
     setIsEditMode((previous) => !previous)
     setPendingImageFile(null)
+    setOpenedRoleMenuUserId(null)
     setErrorText(null)
   }
 
-  const handleDeleteGroup = async () => {
-    if (!accessToken || !activeGroup || !canManageGroup || !isEditMode) {
+  const handleDeleteGroup = () => {
+    if (!accessToken || !activeGroup || !canManageGroup) {
       return
     }
 
-    const confirmed = window.confirm(`Удалить группу "${activeGroup.name}"?`)
-    if (!confirmed) {
-      return
-    }
-
-    setIsSubmitting(true)
-    setErrorText(null)
-    try {
-      await deleteGroup(accessToken, activeGroup.id)
-      setIsEditMode(false)
-      await syncGroupList(accessToken, null)
-    } catch (error) {
-      setErrorText(toUiErrorText(error))
-    } finally {
-      setIsSubmitting(false)
-    }
+    setOpenedRoleMenuUserId(null)
+    setConfirmDialog({
+      type: 'delete-group',
+      groupId: activeGroup.id,
+      groupName: activeGroup.name,
+    })
   }
 
-  const handleChangeMemberRole = async (userId: string, role: GroupMutableRole) => {
-    if (!accessToken || !activeGroupId || !canManageGroup || !isEditMode) {
+  const handleCloseConfirmDialog = () => {
+    if (isConfirmSubmitting) {
+      return
+    }
+    setConfirmDialog(null)
+  }
+
+  const handleChangeMemberRole = (
+    member: GroupUserItem,
+    role: GroupMutableRole,
+  ) => {
+    if (!accessToken || !activeGroupId || !canManageGroup) {
       return
     }
 
-    setPendingRoleUserId(userId)
+    if (member.role === role) {
+      setOpenedRoleMenuUserId(null)
+      return
+    }
+
+    const memberName = member.name.trim().length > 0 ? member.name : member.email
+    setOpenedRoleMenuUserId(null)
+    setConfirmDialog({
+      type: 'change-role',
+      memberId: member.id,
+      memberName,
+      nextRole: role,
+    })
+  }
+
+  const handleConfirmDialogAction = async () => {
+    const dialog = confirmDialog
+    if (!dialog || !accessToken) {
+      return
+    }
+
+    if (dialog.type === 'change-role' && !activeGroupId) {
+      return
+    }
+
+    setIsConfirmSubmitting(true)
     setErrorText(null)
     try {
-      const updatedMember = await changeGroupUserRole(accessToken, activeGroupId, userId, role)
-      startTransition(() => {
-        setGroupUsers((previousMembers) => {
-          return previousMembers.map((member) => (member.id === updatedMember.id ? updatedMember : member))
+      if (dialog.type === 'delete-group') {
+        setIsSubmitting(true)
+        await deleteGroup(accessToken, dialog.groupId)
+        setIsEditMode(false)
+        await syncGroupList(accessToken, null)
+      } else {
+        setPendingRoleUserId(dialog.memberId)
+        const updatedMember = await changeGroupUserRole(
+          accessToken,
+          activeGroupId!,
+          dialog.memberId,
+          dialog.nextRole,
+        )
+        startTransition(() => {
+          setGroupUsers((previousMembers) => {
+            return previousMembers.map((previousMember) =>
+              previousMember.id === updatedMember.id ? updatedMember : previousMember,
+            )
+          })
         })
-      })
+      }
+      setConfirmDialog(null)
     } catch (error) {
       setErrorText(toUiErrorText(error))
     } finally {
-      setPendingRoleUserId(null)
+      if (dialog.type === 'delete-group') {
+        setIsSubmitting(false)
+      } else {
+        setPendingRoleUserId(null)
+      }
+      setIsConfirmSubmitting(false)
     }
   }
 
   const handleSelectGroup = (groupId: string) => {
     setIsCreating(false)
     setIsEditMode(false)
+    setOpenedRoleMenuUserId(null)
+    setConfirmDialog(null)
     setPendingImageFile(null)
     setErrorText(null)
     setActiveGroupId(groupId)
@@ -393,7 +454,7 @@ export function GroupsWorkspacePage() {
 
   const handleOpenQrModal = () => {
     if (!groupQr) {
-      setErrorText('QR-код еще не загружен. Попробуйте выбрать группу заново.')
+      setErrorText('qr-код группы еще не загружен. Попробуйте выбрать группу заново.')
       return
     }
     setIsQrModalOpen(true)
@@ -403,7 +464,7 @@ export function GroupsWorkspacePage() {
     setIsQrModalOpen(false)
   }
 
-  const handleUploadImageMock = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleUploadImage = (event: ChangeEvent<HTMLInputElement>) => {
     const nextFile = event.target.files?.[0]
     setPendingImageFile(nextFile ?? null)
     event.target.value = ''
@@ -413,14 +474,31 @@ export function GroupsWorkspacePage() {
     setIsCreating(false)
     setIsEditMode(false)
     setPendingImageFile(null)
+    setOpenedRoleMenuUserId(null)
+    setConfirmDialog(null)
     setErrorText(null)
     if (accessToken) {
       void syncGroupList(accessToken, groups[0]?.id ?? null)
     }
   }
 
-  const qrExpiryLabel = groupQr ? new Date(groupQr.expired_at).toLocaleString('ru-RU') : '—'
+  const isGuest = currentUserRole === 'GUEST'
+  const isViewer = currentUserRole === 'VIEWER'
+  const isHost = currentUserRole === 'MAINTAINER'
   const groupImageLabel = pendingImageFile ? `Файл: ${pendingImageFile.name}` : ''
+  const qrExpiryLabel = groupQr ? new Date(groupQr.expired_at).toLocaleString('ru-RU') : '—'
+  const confirmTitle =
+    confirmDialog?.type === 'delete-group'
+      ? 'Подтвердите удаление группы'
+      : 'Подтвердите изменение роли'
+  const confirmMessage =
+    confirmDialog?.type === 'delete-group'
+      ? `Удалить группу "${confirmDialog.groupName}"? Это действие нельзя отменить.`
+      : confirmDialog
+        ? `Изменить роль участника "${confirmDialog.memberName}" на ${toRoleName(confirmDialog.nextRole)}?`
+        : ''
+  const confirmActionLabel =
+    confirmDialog?.type === 'delete-group' ? 'Удалить группу' : 'Сменить роль'
 
   return (
     <section className={styles.root}>
@@ -428,8 +506,8 @@ export function GroupsWorkspacePage() {
         <header className={styles.groupListHeader}>
           <h2 className={styles.groupListTitle}>Группы</h2>
           <button
-            className={styles.editButton}
             aria-label="Создать новую группу"
+            className={styles.editButton}
             disabled={loadingGroups || isSubmitting || isCreating}
             onClick={handleOpenCreateMode}
             type="button"
@@ -460,7 +538,7 @@ export function GroupsWorkspacePage() {
                   onClick={() => handleSelectGroup(group.id)}
                   type="button"
                 >
-                  <span className={styles.avatar} aria-hidden style={getGroupAvatarStyle(group.image_url)} />
+                  <span aria-hidden className={styles.avatar} style={getGroupAvatarStyle(group.image_url)} />
                   <span className={styles.groupName}>{group.name}</span>
                 </button>
               ))
@@ -477,14 +555,14 @@ export function GroupsWorkspacePage() {
 
             <form className={styles.createDetailsForm} onSubmit={handleCreateGroup}>
               <div className={styles.detailsHeader}>
-                <div className={styles.detailsAvatar} aria-hidden />
+                <div aria-hidden className={styles.detailsAvatar} />
                 <div className={styles.imageUploadBlock}>
                   <label className={styles.uploadButton}>
                     Загрузить картинку
                     <input
                       accept="image/jpeg,image/jpg,image/png,image/webp"
                       className={styles.hiddenFileInput}
-                      onChange={handleUploadImageMock}
+                      onChange={handleUploadImage}
                       type="file"
                     />
                   </label>
@@ -519,37 +597,20 @@ export function GroupsWorkspacePage() {
           <>
             <div className={styles.detailsTopBar}>
               <span className={styles.modeBadge}>Информация о группе</span>
-              <button
-                className={styles.pencilButton}
-                disabled={!canManageGroup}
-                onClick={handleToggleEditMode}
-                type="button"
-              >
-                <svg aria-hidden viewBox="0 0 24 24">
-                  <path d="M4 20L8.5 19L19 8.5L14.5 4L4 14.5L4 20Z" />
-                  <path d="M12.8 5.7L17.3 10.2" />
-                </svg>
-              </button>
+              {isHost ? (
+                <button className={styles.pencilButton} onClick={handleToggleEditMode} type="button">
+                  <svg aria-hidden viewBox="0 0 24 24">
+                    <path d="M4 20L8.5 19L19 8.5L14.5 4L4 14.5L4 20Z" />
+                    <path d="M12.8 5.7L17.3 10.2" />
+                  </svg>
+                </button>
+              ) : null}
             </div>
 
             <div className={styles.detailsHeader}>
-              <div className={styles.detailsAvatar} aria-hidden style={getGroupAvatarStyle(activeGroup.image_url)} />
-              <div className={styles.imageUploadBlock}>
-                {isEditMode && canManageGroup ? (
-                  <label className={styles.uploadButton}>
-                    Загрузить картинку
-                    <input
-                      accept="image/jpeg,image/jpg,image/png,image/webp"
-                      className={styles.hiddenFileInput}
-                      onChange={handleUploadImageMock}
-                      type="file"
-                    />
-                  </label>
-                ) : null}
-                {isEditMode && canManageGroup ? (
-                  groupImageLabel ? <p className={styles.imageUploadText}>{groupImageLabel}</p> : null
-                ) : null}
-              </div>
+              <div aria-hidden className={styles.detailsAvatar} style={getGroupAvatarStyle(activeGroup.image_url)} />
+              <h3 className={styles.detailsName}>{activeGroup.name}</h3>
+
               {isEditMode && canManageGroup ? (
                 <form className={styles.renameForm} onSubmit={handleUpdateGroup}>
                   <label className={styles.renameLabel} htmlFor="group-name-input">
@@ -567,20 +628,31 @@ export function GroupsWorkspacePage() {
                       Сохранить
                     </button>
                   </div>
+
+                  <div className={styles.imageUploadBlock}>
+                    <label className={styles.uploadButton}>
+                      Загрузить картинку
+                      <input
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        className={styles.hiddenFileInput}
+                        onChange={handleUploadImage}
+                        type="file"
+                      />
+                    </label>
+                    {groupImageLabel ? <p className={styles.imageUploadText}>{groupImageLabel}</p> : null}
+                  </div>
                 </form>
-              ) : (
-                <h3 className={styles.detailsName}>{activeGroup.name}</h3>
-              )}
+              ) : null}
             </div>
 
             <div className={styles.linkBlocks}>
               <button className={styles.linkBlock} onClick={handleOpenPlaylists} type="button">
-                <span>Плейлисты группы</span>
-                <span className={styles.linkArrow}>{groupPlaylists.length}</span>
+                <span>плейлисты группы</span>
+                <span className={styles.linkArrow}>›</span>
               </button>
               <button className={styles.linkBlock} onClick={handleOpenQrModal} type="button">
-                <span>QR-код группы</span>
-                <span className={styles.linkArrow}>{groupQr?.is_expired ? 'expired' : 'open'}</span>
+                <span>qr-код группы</span>
+                <span className={styles.linkArrow}>›</span>
               </button>
             </div>
 
@@ -591,24 +663,59 @@ export function GroupsWorkspacePage() {
               ) : null}
               {!loadingDetails
                 ? groupUsers.map((member) => {
-                    const nextRole = getNextMutableRole(member.role)
                     const memberName = member.name.trim().length > 0 ? member.name : member.email
+                    const isSelf = normalizeEmail(member.email) === sessionEmailNormalized
+                    const canShowRoleMenu =
+                      canManageGroup && !isSelf && member.role !== 'MAINTAINER'
+                    const isRoleMenuOpen = openedRoleMenuUserId === member.id
+                    const isRoleUpdating = pendingRoleUserId === member.id
 
                     return (
                       <div className={styles.memberRow} key={member.id}>
-                        <span className={styles.memberAvatar} aria-hidden />
+                        <span aria-hidden className={styles.memberAvatar} />
                         <span className={styles.memberName}>{memberName}</span>
+
                         <div className={styles.memberActions}>
                           <span className={styles.memberRole}>{roleLabel[member.role]}</span>
-                          {canManageGroup && isEditMode && nextRole ? (
-                            <button
-                              className={styles.memberRoleButton}
-                              disabled={pendingRoleUserId === member.id}
-                              onClick={() => void handleChangeMemberRole(member.id, nextRole)}
-                              type="button"
-                            >
-                              {roleChangeLabel[nextRole]}
-                            </button>
+
+                          {canShowRoleMenu ? (
+                            <div className={styles.roleMenuWrap}>
+                              <button
+                                aria-expanded={isRoleMenuOpen}
+                                aria-label={`Изменить роль участника ${memberName}`}
+                                className={styles.roleMenuToggle}
+                                disabled={isRoleUpdating}
+                                onClick={() =>
+                                  setOpenedRoleMenuUserId((previous) => (previous === member.id ? null : member.id))
+                                }
+                                type="button"
+                              >
+                                ...
+                              </button>
+
+                              {isRoleMenuOpen ? (
+                                <div className={styles.roleMenu}>
+                                  {mutableRoles.map((role) => {
+                                    const isCurrentRole = member.role === role
+                                    return (
+                                      <button
+                                        className={
+                                          isCurrentRole
+                                            ? `${styles.roleMenuItem} ${styles.roleMenuItemActive}`
+                                            : styles.roleMenuItem
+                                        }
+                                        disabled={isRoleUpdating}
+                                        key={role}
+                                        onClick={() => void handleChangeMemberRole(member, role)}
+                                        type="button"
+                                      >
+                                        {toRoleName(role)}
+                                      </button>
+                                    )
+                                  })}
+                                </div>
+                              ) : null}
+                            </div>
                           ) : null}
                         </div>
                       </div>
@@ -617,27 +724,31 @@ export function GroupsWorkspacePage() {
                 : null}
             </div>
 
-            <button
-              className={styles.deleteButton}
-              disabled={!canManageGroup || !isEditMode || isSubmitting}
-              onClick={handleDeleteGroup}
-              type="button"
-            >
-              Удалить группу
-            </button>
+            {isHost ? (
+              <button className={styles.deleteButton} disabled={isSubmitting} onClick={handleDeleteGroup} type="button">
+                Удалить группу
+              </button>
+            ) : null}
+
+            {isGuest ? (
+              <button className={styles.mockActionButton} disabled type="button">
+                Выйти из группы
+              </button>
+            ) : null}
+
+            {isViewer ? (
+              <button className={styles.mockActionButton} disabled type="button">
+                Перестать наблюдать
+              </button>
+            ) : null}
           </>
         )}
       </section>
 
       {isQrModalOpen && groupQr ? (
-        <div
-          aria-modal="true"
-          className={styles.modalOverlay}
-          onClick={handleCloseQrModal}
-          role="dialog"
-        >
+        <div aria-modal="true" className={styles.modalOverlay} onClick={handleCloseQrModal} role="dialog">
           <div className={styles.modalCard} onClick={(event) => event.stopPropagation()}>
-            <h3 className={styles.modalTitle}>QR-код группы</h3>
+            <h3 className={styles.modalTitle}>qr-код группы</h3>
             <p className={styles.modalText}>Ссылка для входа в группу:</p>
             <input className={styles.modalInput} readOnly value={groupQr.qr_url} />
             <p className={styles.modalText}>Истекает: {qrExpiryLabel}</p>
@@ -647,6 +758,33 @@ export function GroupsWorkspacePage() {
               </a>
               <button className={styles.secondaryButton} onClick={handleCloseQrModal} type="button">
                 Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {confirmDialog ? (
+        <div aria-modal="true" className={styles.modalOverlay} onClick={handleCloseConfirmDialog} role="dialog">
+          <div className={styles.modalCard} onClick={(event) => event.stopPropagation()}>
+            <h3 className={styles.modalTitle}>{confirmTitle}</h3>
+            <p className={styles.modalText}>{confirmMessage}</p>
+            <div className={styles.modalActions}>
+              <button
+                className={styles.modalDangerButton}
+                disabled={isConfirmSubmitting}
+                onClick={() => void handleConfirmDialogAction()}
+                type="button"
+              >
+                {isConfirmSubmitting ? 'Выполняем...' : confirmActionLabel}
+              </button>
+              <button
+                className={styles.secondaryButton}
+                disabled={isConfirmSubmitting}
+                onClick={handleCloseConfirmDialog}
+                type="button"
+              >
+                Отмена
               </button>
             </div>
           </div>

@@ -1,0 +1,92 @@
+.root {
+  position: relative;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: #121212;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.hideButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.3);
+  color: inherit;
+  cursor: pointer;
+}
+
+.track {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.cover {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  background: radial-gradient(circle at 40% 30%, #ff6b6b, #892020 70%, #260909 100%);
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+}
+
+.meta {
+  min-width: 0;
+}
+
+.title,
+.artist {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.title {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.artist {
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.9rem;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.controlButton {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  background: rgba(0, 0, 0, 0.34);
+  color: inherit;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+@media (max-width: 760px) {
+  .root {
+    padding-right: 40px;
+  }
+
+  .title {
+    font-size: 0.95rem;
+  }
+}

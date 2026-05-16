@@ -1,11 +1,10 @@
-import { useNavigate, Link } from 'react-router-dom'
-import { ThemeToggle } from '../../../../../shared/ui/ThemeToggle/ThemeToggle'
+import { Link, useNavigate } from 'react-router-dom'
+import { AppSidebar, type AppSidebarItem } from '../../../../../shared/ui/AppSidebar/AppSidebar'
+import { sidebarSectionItems } from '../../../../../shared/ui/AppSidebar/sidebarItems'
 import { AuthCard } from '../../components/AuthCard/AuthCard'
 import { ServicesFooterLogos } from '../../components/ServicesFooterLogos/ServicesFooterLogos'
 import { LoginForm } from '../../forms/LoginForm/LoginForm'
 import styles from './LoginPage.module.css'
-
-const guestNavItems = ['Группы', 'Поиск', 'Личный кабинет', 'Плейлисты']
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -14,26 +13,17 @@ export function LoginPage() {
     navigate('/', { replace: true })
   }
 
+  const sidebarItems: AppSidebarItem[] = sidebarSectionItems.map((item) => ({
+    id: item.id,
+    label: item.label,
+    icon: item.icon,
+    onClick: handleProtectedNavigationAttempt,
+    active: item.id === 'groups',
+  }))
+
   return (
     <main className={styles.page}>
-      <aside className={styles.sidebar}>
-        <div className={styles.sidebarTitleBlock}>
-          <p className={styles.sidebarTitle}>Меню</p>
-          <p className={styles.sidebarSubtitle}>Разделы приложения</p>
-        </div>
-
-        <nav aria-label="Основная навигация" className={styles.nav}>
-          {guestNavItems.map((item) => (
-            <button className={styles.navItem} key={item} onClick={handleProtectedNavigationAttempt} type="button">
-              <span className={styles.navLabel}>{item}</span>
-            </button>
-          ))}
-        </nav>
-
-        <div className={styles.themeToggleWrap}>
-          <ThemeToggle />
-        </div>
-      </aside>
+      <AppSidebar items={sidebarItems} />
 
       <section className={styles.workspace}>
         <header className={styles.header}>
