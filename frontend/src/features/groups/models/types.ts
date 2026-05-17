@@ -29,6 +29,22 @@ export type PlaylistCreatePayload = {
   image_url?: string | null
 }
 
+export type PlaylistUpdatePayload = {
+  name?: string
+}
+
+export type PlaylistImageUploadInitPayload = {
+  filename: string
+  content_type?: string | null
+}
+
+export type PlaylistImageUploadInitResponse = {
+  object_key: string
+  upload_url: string
+  file_url: string
+  expires_in_seconds: number
+}
+
 export type GroupQrResponse = {
   group_id: string
   qr_url: string

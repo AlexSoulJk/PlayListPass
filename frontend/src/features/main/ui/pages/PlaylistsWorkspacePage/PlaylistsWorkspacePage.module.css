@@ -236,6 +236,8 @@
   padding: 0 14px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .columnTitle {
@@ -243,6 +245,22 @@
   font-size: 1.95rem;
   font-family: var(--font-brand);
   font-weight: 750;
+}
+
+.columnCreateButton {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(0, 0, 0, 0.36);
+  color: #ffffff;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.columnCreateButton:hover {
+  border-color: rgba(255, 255, 255, 0.42);
 }
 
 .playlistList {
@@ -301,6 +319,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  overflow: hidden;
 }
 
 .playlistCardMain {
@@ -312,6 +331,14 @@
   grid-template-columns: 126px 1fr auto;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
+}
+
+.playlistCardMainEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
 }
 
 .mainCover {
@@ -405,6 +432,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .inlineFormTitle {
@@ -512,7 +540,8 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(0, 0, 0, 0.34);
   overflow: auto;
-  min-height: 220px;
+  min-height: 0;
+  flex: 1;
 }
 
 .trackRow {

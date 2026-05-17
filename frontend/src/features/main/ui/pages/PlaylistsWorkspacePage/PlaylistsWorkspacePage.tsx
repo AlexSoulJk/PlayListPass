@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../../../app/providers/useAuth'
 import { getGroupList, getGroupPlaylists, getGroupUsers, GroupsApiError } from '../../../../groups/api/groupsApi'
-import { createPlaylist, PlaylistsApiError } from '../../../../groups/api/playlistsApi'
+import { createPlaylist, deletePlaylist, PlaylistsApiError, updatePlaylist, uploadPlaylistImage } from '../../../../groups/api/playlistsApi'
 import type { GroupListItem, GroupPlaylistItem, GroupRole } from '../../../../groups/models/types'
 import styles from './PlaylistsWorkspacePage.module.css'
 
@@ -41,10 +41,20 @@ const toUiErrorText = (error: unknown): string => {
         return 'Сессия истекла. Авторизуйтесь повторно.'
       case 'GROUP_NOT_FOUND':
         return 'Группа не найдена.'
+      case 'PLAYLIST_NOT_FOUND':
+        return 'Плейлист не найден.'
       case 'ACCESS_DENIED':
         return 'Недостаточно прав для изменения плейлистов.'
       case 'PLAYLIST_NAME_ALREADY_EXISTS':
         return 'Плейлист с таким названием уже существует в группе.'
+      case 'PLAYLIST_IMAGE_UNSUPPORTED_FORMAT':
+        return 'Неподдерживаемый формат картинки. Используйте JPG, JPEG, PNG или WEBP.'
+      case 'PLAYLIST_IMAGE_OBJECT_NOT_FOUND':
+        return 'Картинка не найдена в хранилище. Попробуйте загрузить снова.'
+      case 'PLAYLIST_IMAGE_UPLOAD_FAILED':
+        return 'Не удалось загрузить файл в хранилище.'
+      case 'STORAGE_BACKEND_NOT_AVAILABLE':
+        return 'Сервис хранения временно недоступен.'
       case 'VALIDATION_ERROR':
         return 'Проверьте корректность данных формы.'
       case 'NETWORK_ERROR':
@@ -81,24 +91,6 @@ const makeMockTracks = (playlist: GroupPlaylistItem): { id: string; title: strin
   }))
 }
 
-const readFileAsDataUrl = async (file: File): Promise<string> => {
-  return await new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => {
-      const result = reader.result
-      if (typeof result === 'string') {
-        resolve(result)
-        return
-      }
-      reject(new Error('Не удалось прочитать файл картинки'))
-    }
-    reader.onerror = () => {
-      reject(new Error('Не удалось прочитать файл картинки'))
-    }
-    reader.readAsDataURL(file)
-  })
-}
-
 const toGroupIdFromFilter = (filterValue: string): string | null => {
   if (!filterValue || filterValue === ALL_GROUPS_FILTER) {
     return null
@@ -108,6 +100,7 @@ const toGroupIdFromFilter = (filterValue: string): string | null => {
 
 export function PlaylistsWorkspacePage() {
   const location = useLocation()
+  const navigate = useNavigate()
   const routeState = (location.state as PlaylistsRouteState | null) ?? null
   const { session } = useAuth()
 
@@ -137,7 +130,8 @@ export function PlaylistsWorkspacePage() {
 
   const [isEditMode, setIsEditMode] = useState(false)
   const [editName, setEditName] = useState('')
-  const [editImageUrl, setEditImageUrl] = useState('')
+  const [editImageFile, setEditImageFile] = useState<File | null>(null)
+  const [editImagePreviewUrl, setEditImagePreviewUrl] = useState<string | null>(null)
 
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null)
   const [isConfirmSubmitting, setIsConfirmSubmitting] = useState(false)
@@ -151,15 +145,15 @@ export function PlaylistsWorkspacePage() {
   const selectedPlaylist = playlists.find((playlist) => playlist.id === selectedPlaylistId) ?? null
 
   const displayRole: RoleFilter = appliedRoleFilter === 'ALL' ? actualRole ?? 'ALL' : appliedRoleFilter
-  const canManagePlaylist = Boolean(appliedGroupId) && displayRole === 'MAINTAINER'
+  const canManageGroupPlaylists = Boolean(appliedGroupId) && actualRole === 'MAINTAINER'
+  const canManageSelectedPlaylist = canManageGroupPlaylists && Boolean(selectedPlaylist)
   const roleFilterMismatch =
     Boolean(appliedGroupId) &&
     appliedRoleFilter !== 'ALL' &&
     actualRole !== null &&
     actualRole !== appliedRoleFilter
 
-  const hasPendingFilterChanges =
-    draftGroupFilter !== appliedGroupFilter || draftRoleFilter !== appliedRoleFilter
+  const hasPendingFilterChanges = draftGroupFilter !== appliedGroupFilter || draftRoleFilter !== appliedRoleFilter
   const canApplyFilters = hasPendingFilterChanges && !isDataLoading && !isSubmitting
 
   const resolveGroupLabel = (groupFilterValue: string): string => {
@@ -200,6 +194,7 @@ export function PlaylistsWorkspacePage() {
         backgroundPosition: 'center',
       }
     : undefined
+
   const createImageLabel = createImageFile ? `Файл: ${createImageFile.name}` : ''
   const createImagePreviewStyle = createImagePreviewUrl
     ? {
@@ -209,10 +204,24 @@ export function PlaylistsWorkspacePage() {
       }
     : undefined
 
+  const editImageLabel = editImageFile ? `Файл: ${editImageFile.name}` : ''
+  const editImagePreviewStyle = editImagePreviewUrl
+    ? {
+        backgroundImage: `url(${editImagePreviewUrl})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }
+    : selectedPlaylist?.image_url
+      ? {
+          backgroundImage: `url(${selectedPlaylist.image_url})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }
+      : undefined
+
   const syncGroups = async (token: string) => {
     setIsGroupsLoading(true)
     setErrorText(null)
-
     try {
       const loadedGroups = await getGroupList(token)
       setGroups(loadedGroups)
@@ -252,7 +261,6 @@ export function PlaylistsWorkspacePage() {
       setSelectedPlaylistId(null)
       return
     }
-
     void syncGroups(accessToken)
   }, [accessToken])
 
@@ -269,9 +277,7 @@ export function PlaylistsWorkspacePage() {
       setIsDataLoading(true)
       setErrorText(null)
       try {
-        const targetGroups = appliedGroupId
-          ? groups.filter((group) => group.id === appliedGroupId)
-          : groups
+        const targetGroups = appliedGroupId ? groups.filter((group) => group.id === appliedGroupId) : groups
 
         const loadedByGroup = await Promise.all(
           targetGroups.map(async (group) => {
@@ -281,7 +287,6 @@ export function PlaylistsWorkspacePage() {
             ])
             const currentUser = users.find((member) => normalizeEmail(member.email) === sessionEmail) ?? null
             return {
-              groupId: group.id,
               role: currentUser?.role ?? null,
               playlists: nextPlaylists,
             }
@@ -320,7 +325,6 @@ export function PlaylistsWorkspacePage() {
     }
 
     void loadData()
-
     return () => {
       isMounted = false
     }
@@ -337,14 +341,24 @@ export function PlaylistsWorkspacePage() {
       setCreateImagePreviewUrl(null)
       return
     }
-
     const objectUrl = URL.createObjectURL(createImageFile)
     setCreateImagePreviewUrl(objectUrl)
-
     return () => {
       URL.revokeObjectURL(objectUrl)
     }
   }, [createImageFile])
+
+  useEffect(() => {
+    if (!editImageFile) {
+      setEditImagePreviewUrl(null)
+      return
+    }
+    const objectUrl = URL.createObjectURL(editImageFile)
+    setEditImagePreviewUrl(objectUrl)
+    return () => {
+      URL.revokeObjectURL(objectUrl)
+    }
+  }, [editImageFile])
 
   useEffect(() => {
     if (!selectedPlaylistId) {
@@ -367,16 +381,22 @@ export function PlaylistsWorkspacePage() {
     event.target.value = ''
   }
 
+  const handleEditImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const nextFile = event.target.files?.[0]
+    setEditImageFile(nextFile ?? null)
+    event.target.value = ''
+  }
+
   const handleApplyFilters = () => {
     if (!canApplyFilters) {
       return
     }
-
     setAppliedGroupFilter(draftGroupFilter)
     setAppliedRoleFilter(draftRoleFilter)
     setSelectedPlaylistId(null)
     setIsCreateMode(false)
     setIsEditMode(false)
+    setEditImageFile(null)
     setConfirmDialog(null)
     setIsGroupDropdownOpen(false)
     setIsRoleDropdownOpen(false)
@@ -398,14 +418,17 @@ export function PlaylistsWorkspacePage() {
     setIsSubmitting(true)
     setErrorText(null)
     try {
-      const createdImageDataUrl = createImageFile ? await readFileAsDataUrl(createImageFile) : null
       const createdPlaylist = await createPlaylist(accessToken, appliedGroupId, {
         name: trimmedName,
         image_url: null,
       })
-      const nextPlaylist = {
-        ...createdPlaylist,
-        image_url: createdImageDataUrl ?? createdPlaylist.image_url,
+      const playlistWithImage = createImageFile
+        ? await uploadPlaylistImage(accessToken, appliedGroupId, createdPlaylist.id, createImageFile)
+        : createdPlaylist
+
+      const nextPlaylist: GroupPlaylistItem = {
+        ...playlistWithImage,
+        track_count: 0,
       }
       setPlaylists((previous) => [...previous, nextPlaylist])
       setSelectedPlaylistId(nextPlaylist.id)
@@ -422,15 +445,15 @@ export function PlaylistsWorkspacePage() {
       return
     }
     setEditName(selectedPlaylist.name)
-    setEditImageUrl(selectedPlaylist.image_url ?? '')
+    setEditImageFile(null)
     setIsEditMode(true)
     setIsCreateMode(false)
     setErrorText(null)
   }
 
-  const handleSaveEdit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSaveEdit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!selectedPlaylist) {
+    if (!selectedPlaylist || !accessToken || !appliedGroupId) {
       return
     }
 
@@ -440,20 +463,66 @@ export function PlaylistsWorkspacePage() {
       return
     }
 
-    const nextImageUrl = editImageUrl.trim().length > 0 ? editImageUrl.trim() : null
-    setPlaylists((previous) =>
-      previous.map((playlist) =>
-        playlist.id === selectedPlaylist.id
-          ? {
-              ...playlist,
-              name: nextName,
-              image_url: nextImageUrl,
-            }
-          : playlist,
-      ),
-    )
-    setIsEditMode(false)
+    setIsSubmitting(true)
     setErrorText(null)
+    try {
+      let nextImageUrl = selectedPlaylist.image_url
+
+      if (nextName !== selectedPlaylist.name) {
+        const updatedPlaylist = await updatePlaylist(accessToken, appliedGroupId, selectedPlaylist.id, {
+          name: nextName,
+        })
+        nextImageUrl = updatedPlaylist.image_url
+      }
+
+      if (editImageFile) {
+        const updatedWithImage = await uploadPlaylistImage(accessToken, appliedGroupId, selectedPlaylist.id, editImageFile)
+        nextImageUrl = updatedWithImage.image_url
+      }
+
+      setPlaylists((previous) =>
+        previous.map((playlist) =>
+          playlist.id === selectedPlaylist.id
+            ? {
+                ...playlist,
+                name: nextName,
+                image_url: nextImageUrl,
+              }
+            : playlist,
+        ),
+      )
+      setIsEditMode(false)
+      setEditImageFile(null)
+      setErrorText(null)
+    } catch (error) {
+      setErrorText(toUiErrorText(error))
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleOpenCreateMode = () => {
+    if (!canManageGroupPlaylists) {
+      return
+    }
+    setIsCreateMode(true)
+    setIsEditMode(false)
+    setConfirmDialog(null)
+    setErrorText(null)
+  }
+
+  const handleOpenAddTracksScreen = () => {
+    if (!canManageGroupPlaylists || !selectedPlaylist || !appliedGroupId) {
+      return
+    }
+    navigate('/app/search', {
+      state: {
+        groupId: appliedGroupId,
+        groupName: appliedGroup?.name ?? routeState?.groupName ?? null,
+        playlistId: selectedPlaylist.id,
+        playlistName: selectedPlaylist.name,
+      },
+    })
   }
 
   const handleRequestDeletePlaylist = () => {
@@ -468,21 +537,66 @@ export function PlaylistsWorkspacePage() {
   }
 
   const handleConfirmDeletePlaylist = async () => {
-    if (!confirmDialog) {
+    if (!confirmDialog || !accessToken || !appliedGroupId) {
       return
     }
 
     setIsConfirmSubmitting(true)
+    setErrorText(null)
     try {
+      await deletePlaylist(accessToken, appliedGroupId, confirmDialog.playlistId)
       setPlaylists((previous) => previous.filter((playlist) => playlist.id !== confirmDialog.playlistId))
       setSelectedPlaylistId(null)
       setIsEditMode(false)
       setIsCreateMode(false)
       setConfirmDialog(null)
+    } catch (error) {
+      setErrorText(toUiErrorText(error))
     } finally {
       setIsConfirmSubmitting(false)
     }
   }
+
+  const renderCreateForm = () => (
+    <form className={styles.inlineForm} onSubmit={handleCreatePlaylist}>
+      <h4 className={styles.inlineFormTitle}>Создать плейлист</h4>
+      <div className={styles.createHeader}>
+        <span aria-hidden className={styles.createAvatarPreview} style={createImagePreviewStyle} />
+        <div className={styles.imageUploadBlock}>
+          <label className={styles.uploadButton}>
+            Загрузить картинку
+            <input
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              className={styles.hiddenFileInput}
+              onChange={handleCreateImageUpload}
+              type="file"
+            />
+          </label>
+          {createImageLabel ? <p className={styles.imageUploadText}>{createImageLabel}</p> : null}
+        </div>
+      </div>
+
+      <label className={styles.fieldLabel} htmlFor="playlist-create-name">
+        Название
+      </label>
+      <input
+        className={styles.textField}
+        id="playlist-create-name"
+        onChange={(event) => setCreateName(event.target.value)}
+        placeholder="Введите название плейлиста"
+        value={createName}
+      />
+
+      <div className={styles.inlineFormActions}>
+        <button className={styles.primaryButton} disabled={isSubmitting} type="submit">
+          {isSubmitting ? 'Создаем...' : 'Создать'}
+        </button>
+        <button className={styles.secondaryButton} onClick={resetCreateForm} type="button">
+          Отмена
+        </button>
+      </div>
+    </form>
+  )
 
   return (
     <section className={styles.root}>
@@ -624,6 +738,16 @@ export function PlaylistsWorkspacePage() {
         <section className={styles.listColumn}>
           <header className={styles.columnHeader}>
             <h3 className={styles.columnTitle}>Плейлисты</h3>
+            {canManageGroupPlaylists ? (
+              <button
+                aria-label="Создать плейлист"
+                className={styles.columnCreateButton}
+                onClick={handleOpenCreateMode}
+                type="button"
+              >
+                +
+              </button>
+            ) : null}
           </header>
 
           <div className={styles.playlistList}>
@@ -660,152 +784,135 @@ export function PlaylistsWorkspacePage() {
         </section>
 
         <section className={styles.detailsColumn}>
-          <article className={styles.playlistCardMain}>
-            <div
-              aria-hidden
-              className={styles.mainCover}
-              style={selectedPlaylist?.image_url ? { backgroundImage: `url(${selectedPlaylist.image_url})` } : undefined}
-            />
+          {isCreateMode ? (
+            renderCreateForm()
+          ) : (
+            <>
+              <article
+                className={
+                  selectedPlaylist
+                    ? styles.playlistCardMain
+                    : `${styles.playlistCardMain} ${styles.playlistCardMainEmpty}`
+                }
+              >
+                {selectedPlaylist ? (
+                  <>
+                <div
+                  aria-hidden
+                  className={styles.mainCover}
+                  style={selectedPlaylist?.image_url ? { backgroundImage: `url(${selectedPlaylist.image_url})` } : undefined}
+                />
 
-            <div className={styles.mainMeta}>
-              <div className={styles.mainTitleRow}>
-                <h3 className={styles.mainTitle} title={selectedPlaylist?.name ?? 'Плейлист не выбран'}>
-                  {selectedPlaylist?.name ?? 'Плейлист не выбран'}
-                </h3>
-                {canManagePlaylist && selectedPlaylist ? (
-                  <button className={styles.iconButton} onClick={handleStartEdit} type="button">
-                    ✎
+                <div className={styles.mainMeta}>
+                  <div className={styles.mainTitleRow}>
+                    <h3 className={styles.mainTitle} title={selectedPlaylist?.name ?? 'Плейлист не выбран'}>
+                      {selectedPlaylist?.name ?? 'Плейлист не выбран'}
+                    </h3>
+                    {canManageSelectedPlaylist ? (
+                      <button className={styles.iconButton} onClick={handleStartEdit} type="button">
+                        ✎
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <div className={styles.mainActions}>
+                    <button className={styles.circleAction} type="button">
+                      ▶
+                      <span>Слушать</span>
+                    </button>
+                    <button className={styles.circleAction} type="button">
+                      ♡
+                      <span>В избранном</span>
+                    </button>
+                  </div>
+                </div>
+
+                {canManageSelectedPlaylist ? (
+                  <button className={styles.plusButton} onClick={handleOpenAddTracksScreen} type="button">
+                    +
                   </button>
                 ) : null}
-              </div>
+                  </>
+                ) : (
+                  <h3 className={styles.mainTitle}>Плейлист не выбран</h3>
+                )}
+              </article>
 
-              <div className={styles.mainActions}>
-                <button className={styles.circleAction} type="button">
-                  ▶
-                  <span>Слушать</span>
-                </button>
-                <button className={styles.circleAction} type="button">
-                  ♡
-                  <span>В избранном</span>
-                </button>
-              </div>
-            </div>
-
-            {canManagePlaylist ? (
-              <button
-                className={styles.plusButton}
-                onClick={() => {
-                  setIsCreateMode(true)
-                  setIsEditMode(false)
-                }}
-                type="button"
-              >
-                +
-              </button>
-            ) : null}
-          </article>
-
-          {isCreateMode ? (
-            <form className={styles.inlineForm} onSubmit={handleCreatePlaylist}>
-              <h4 className={styles.inlineFormTitle}>Создать плейлист</h4>
-              <div className={styles.createHeader}>
-                <span aria-hidden className={styles.createAvatarPreview} style={createImagePreviewStyle} />
-                <div className={styles.imageUploadBlock}>
-                  <label className={styles.uploadButton}>
-                    Загрузить картинку
-                    <input
-                      accept="image/jpeg,image/jpg,image/png,image/webp"
-                      className={styles.hiddenFileInput}
-                      onChange={handleCreateImageUpload}
-                      type="file"
-                    />
+              {isEditMode && selectedPlaylist ? (
+                <form className={styles.inlineForm} onSubmit={handleSaveEdit}>
+                  <h4 className={styles.inlineFormTitle}>Редактировать плейлист</h4>
+                  <label className={styles.fieldLabel} htmlFor="playlist-edit-name">
+                    Название
                   </label>
-                  {createImageLabel ? <p className={styles.imageUploadText}>{createImageLabel}</p> : null}
-                </div>
-              </div>
+                  <input
+                    className={styles.textField}
+                    id="playlist-edit-name"
+                    onChange={(event) => setEditName(event.target.value)}
+                    value={editName}
+                  />
 
-              <label className={styles.fieldLabel} htmlFor="playlist-create-name">
-                Название
-              </label>
-              <input
-                className={styles.textField}
-                id="playlist-create-name"
-                onChange={(event) => setCreateName(event.target.value)}
-                placeholder="Введите название плейлиста"
-                value={createName}
-              />
-
-              <div className={styles.inlineFormActions}>
-                <button className={styles.primaryButton} disabled={isSubmitting} type="submit">
-                  {isSubmitting ? 'Создаем...' : 'Создать'}
-                </button>
-                <button className={styles.secondaryButton} onClick={resetCreateForm} type="button">
-                  Отмена
-                </button>
-              </div>
-            </form>
-          ) : null}
-
-          {isEditMode && selectedPlaylist ? (
-            <form className={styles.inlineForm} onSubmit={handleSaveEdit}>
-              <h4 className={styles.inlineFormTitle}>Редактировать плейлист</h4>
-              <label className={styles.fieldLabel} htmlFor="playlist-edit-name">
-                Название
-              </label>
-              <input
-                className={styles.textField}
-                id="playlist-edit-name"
-                onChange={(event) => setEditName(event.target.value)}
-                value={editName}
-              />
-
-              <label className={styles.fieldLabel} htmlFor="playlist-edit-image">
-                Ссылка на картинку
-              </label>
-              <input
-                className={styles.textField}
-                id="playlist-edit-image"
-                onChange={(event) => setEditImageUrl(event.target.value)}
-                value={editImageUrl}
-              />
-
-              <div className={styles.inlineFormActions}>
-                <button className={styles.primaryButton} type="submit">
-                  Сохранить
-                </button>
-                <button className={styles.secondaryButton} onClick={() => setIsEditMode(false)} type="button">
-                  Отмена
-                </button>
-              </div>
-            </form>
-          ) : null}
-
-          <section className={styles.tracksCard}>
-            {!selectedPlaylist ? (
-              <p className={styles.emptyState}>Выберите плейлист, чтобы увидеть треки.</p>
-            ) : mockTracks.length === 0 ? (
-              <p className={styles.emptyState}>Пока пусто!</p>
-            ) : (
-              mockTracks.map((track) => (
-                <article className={styles.trackRow} key={track.id}>
-                  <span aria-hidden className={styles.trackAvatar} />
-                  <div className={styles.trackMeta}>
-                    <p className={styles.trackTitle}>{track.title}</p>
-                    <p className={styles.trackArtist}>{track.artist}</p>
+                  <div className={styles.createHeader}>
+                    <span aria-hidden className={styles.createAvatarPreview} style={editImagePreviewStyle} />
+                    <div className={styles.imageUploadBlock}>
+                      <label className={styles.uploadButton}>
+                        Загрузить картинку
+                        <input
+                          accept="image/jpeg,image/jpg,image/png,image/webp"
+                          className={styles.hiddenFileInput}
+                          onChange={handleEditImageUpload}
+                          type="file"
+                        />
+                      </label>
+                      {editImageLabel ? <p className={styles.imageUploadText}>{editImageLabel}</p> : null}
+                    </div>
                   </div>
-                  <button className={styles.trackMenuButton} type="button">
-                    ...
-                  </button>
-                </article>
-              ))
-            )}
-          </section>
 
-          {canManagePlaylist && selectedPlaylist ? (
-            <button className={styles.deleteButton} onClick={handleRequestDeletePlaylist} type="button">
-              Удалить плейлист
-            </button>
-          ) : null}
+                  <div className={styles.inlineFormActions}>
+                    <button className={styles.primaryButton} disabled={isSubmitting} type="submit">
+                      {isSubmitting ? 'Сохраняем...' : 'Сохранить'}
+                    </button>
+                    <button
+                      className={styles.secondaryButton}
+                      onClick={() => {
+                        setIsEditMode(false)
+                        setEditImageFile(null)
+                      }}
+                      type="button"
+                    >
+                      Отмена
+                    </button>
+                  </div>
+                </form>
+              ) : null}
+
+              <section className={styles.tracksCard}>
+                {!selectedPlaylist ? (
+                  <p className={styles.emptyState}>Выберите плейлист, чтобы увидеть треки.</p>
+                ) : mockTracks.length === 0 ? (
+                  <p className={styles.emptyState}>Пока пусто!</p>
+                ) : (
+                  mockTracks.map((track) => (
+                    <article className={styles.trackRow} key={track.id}>
+                      <span aria-hidden className={styles.trackAvatar} />
+                      <div className={styles.trackMeta}>
+                        <p className={styles.trackTitle}>{track.title}</p>
+                        <p className={styles.trackArtist}>{track.artist}</p>
+                      </div>
+                      <button className={styles.trackMenuButton} type="button">
+                        ...
+                      </button>
+                    </article>
+                  ))
+                )}
+              </section>
+
+              {canManageSelectedPlaylist ? (
+                <button className={styles.deleteButton} onClick={handleRequestDeletePlaylist} type="button">
+                  Удалить плейлист
+                </button>
+              ) : null}
+            </>
+          )}
         </section>
       </div>
 
