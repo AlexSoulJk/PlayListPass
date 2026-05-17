@@ -24,6 +24,11 @@ export type GroupPlaylistItem = {
   track_count: number
 }
 
+export type PlaylistCreatePayload = {
+  name: string
+  image_url?: string | null
+}
+
 export type GroupQrResponse = {
   group_id: string
   qr_url: string

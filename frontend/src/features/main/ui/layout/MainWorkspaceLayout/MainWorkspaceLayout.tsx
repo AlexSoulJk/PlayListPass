@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../../../app/providers/useAuth'
 import { usePlayback } from '../../../../../app/providers/usePlayback'
 import { AppSidebar } from '../../../../../shared/ui/AppSidebar/AppSidebar'
@@ -10,6 +10,8 @@ export function MainWorkspaceLayout() {
   const { session, signOut } = useAuth()
   const { currentTrack, isHidden } = usePlayback()
   const navigate = useNavigate()
+  const location = useLocation()
+  const hideWorkspaceHeader = location.pathname === '/app/playlists'
 
   const handleLogout = () => {
     signOut()
@@ -21,15 +23,17 @@ export function MainWorkspaceLayout() {
       <AppSidebar items={sidebarSectionItems} onLogout={handleLogout} />
 
       <section className={styles.workspace}>
-        <header className={styles.header}>
-          <div className={styles.headerBrand}>
-            <h1 className={styles.headerTitle}>PlaylistPass</h1>
-            <p className={styles.headerSubtitle}>
-              Объединяйте друзей и управляйте общим музыкальным пространством
-            </p>
-          </div>
-          <div className={styles.sessionBadge}>{session?.email ?? 'Неизвестный пользователь'}</div>
-        </header>
+        {!hideWorkspaceHeader ? (
+          <header className={styles.header}>
+            <div className={styles.headerBrand}>
+              <h1 className={styles.headerTitle}>PlaylistPass</h1>
+              <p className={styles.headerSubtitle}>
+                Объединяйте друзей и управляйте общим музыкальным пространством
+              </p>
+            </div>
+            <div className={styles.sessionBadge}>{session?.email ?? 'Неизвестный пользователь'}</div>
+          </header>
+        ) : null}
 
         <div className={styles.content}>
           <Outlet />

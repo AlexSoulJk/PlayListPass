@@ -447,6 +447,8 @@ export function GroupsWorkspacePage() {
       state: {
         groupId: activeGroup.id,
         groupName: activeGroup.name,
+        groupImageUrl: activeGroup.image_url,
+        groupRole: currentUserRole,
         playlists: groupPlaylists,
       },
     })
