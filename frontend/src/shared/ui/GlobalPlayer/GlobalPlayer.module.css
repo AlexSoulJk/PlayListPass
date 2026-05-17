@@ -10,17 +10,34 @@
   gap: 12px;
 }
 
-.hideButton {
+.closeArea {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 6px;
+  right: 6px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hideButton {
   width: 26px;
   height: 26px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.36);
   color: inherit;
   cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+
+.closeArea:hover .hideButton,
+.closeArea:focus-within .hideButton {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .track {
@@ -28,6 +45,7 @@
   align-items: center;
   gap: 12px;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .cover {
@@ -81,12 +99,41 @@
   line-height: 1;
 }
 
+.controlButton:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.volumeWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.volumeIcon {
+  font-size: 0.92rem;
+  opacity: 0.84;
+}
+
+.volumeRange {
+  width: 110px;
+  accent-color: #d0d0d0;
+}
+
 @media (max-width: 760px) {
   .root {
     padding-right: 40px;
+    flex-wrap: wrap;
   }
 
   .title {
     font-size: 0.95rem;
+  }
+
+  .volumeWrap {
+    width: 100%;
+    min-width: 0;
+    justify-content: flex-end;
   }
 }

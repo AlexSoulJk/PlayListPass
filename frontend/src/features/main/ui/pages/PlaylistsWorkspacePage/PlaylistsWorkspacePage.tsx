@@ -1,9 +1,19 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../../../app/providers/useAuth'
+import { usePlayback } from '../../../../../app/providers/usePlayback'
 import { getGroupList, getGroupPlaylists, getGroupUsers, GroupsApiError } from '../../../../groups/api/groupsApi'
-import { createPlaylist, deletePlaylist, PlaylistsApiError, updatePlaylist, uploadPlaylistImage } from '../../../../groups/api/playlistsApi'
-import type { GroupListItem, GroupPlaylistItem, GroupRole } from '../../../../groups/models/types'
+import {
+  createPlaylist,
+  deletePlaylist,
+  getPlaylistPlaybackQueue,
+  getPlaylistTracks,
+  PlaylistsApiError,
+  removeTrackFromPlaylist,
+  updatePlaylist,
+  uploadPlaylistImage,
+} from '../../../../groups/api/playlistsApi'
+import type { GroupListItem, GroupPlaylistItem, GroupRole, PlaylistTrackItem } from '../../../../groups/models/types'
 import styles from './PlaylistsWorkspacePage.module.css'
 
 type PlaylistsRouteState = {
@@ -15,6 +25,7 @@ type PlaylistsRouteState = {
 }
 
 type RoleFilter = 'ALL' | GroupRole
+
 type ConfirmDialogState = {
   type: 'delete-playlist'
   playlistId: string
@@ -22,12 +33,20 @@ type ConfirmDialogState = {
 }
 
 const ALL_GROUPS_FILTER = '__ALL_GROUPS__'
+const PLAYBACK_BUFFER_THRESHOLD = 0.25
+const PLAYBACK_BUFFER_TIMEOUT_MS = 15000
 
 const roleFilterLabel: Record<RoleFilter, string> = {
   ALL: 'все роли',
   MAINTAINER: 'host',
   GUEST: 'guest',
   VIEWER: 'viewer',
+}
+
+const trackServiceVisualMap: Record<PlaylistTrackItem['service'], { short: string; full: string; urlPrefix: string }> = {
+  YANDEX_MUSIC: { short: 'Y', full: 'Яндекс Музыка', urlPrefix: 'https://music.yandex.ru/track/' },
+  YOUTUBE: { short: 'YT', full: 'YouTube Music', urlPrefix: 'https://music.youtube.com/watch?v=' },
+  SPOTIFY: { short: 'S', full: 'Spotify', urlPrefix: 'https://open.spotify.com/track/' },
 }
 
 const normalizeEmail = (email: string | null | undefined): string => {
@@ -43,6 +62,12 @@ const toUiErrorText = (error: unknown): string => {
         return 'Группа не найдена.'
       case 'PLAYLIST_NOT_FOUND':
         return 'Плейлист не найден.'
+      case 'PLAYLIST_TRACK_NOT_FOUND':
+        return 'Трек уже удален из плейлиста.'
+      case 'PLAYLIST_AUDIO_NOT_AVAILABLE':
+        return 'Аудио для треков в этом плейлисте пока недоступно.'
+      case 'GROUP_TRACK_EDIT_FORBIDDEN':
+        return 'Недостаточно прав для изменения треков.'
       case 'ACCESS_DENIED':
         return 'Недостаточно прав для изменения плейлистов.'
       case 'PLAYLIST_NAME_ALREADY_EXISTS':
@@ -83,14 +108,6 @@ const toUiErrorText = (error: unknown): string => {
   return 'Произошла непредвиденная ошибка. Повторите попытку.'
 }
 
-const makeMockTracks = (playlist: GroupPlaylistItem): { id: string; title: string; artist: string }[] => {
-  return Array.from({ length: playlist.track_count }, (_, index) => ({
-    id: `${playlist.id}-${index + 1}`,
-    title: `Song ${index + 1}`,
-    artist: 'autor',
-  }))
-}
-
 const toGroupIdFromFilter = (filterValue: string): string | null => {
   if (!filterValue || filterValue === ALL_GROUPS_FILTER) {
     return null
@@ -98,11 +115,103 @@ const toGroupIdFromFilter = (filterValue: string): string | null => {
   return filterValue
 }
 
+const toTrackMenuKey = (track: PlaylistTrackItem): string => {
+  return `${track.track_id}:${track.service}:${track.service_track_id}`
+}
+
+const resolveTrackServiceMeta = (service: PlaylistTrackItem['service']): { short: string; full: string } => {
+  return trackServiceVisualMap[service] ?? { short: '•', full: service }
+}
+
+const resolveTrackServiceUrl = (track: PlaylistTrackItem): string | null => {
+  if (track.external_url) {
+    return track.external_url
+  }
+  const mapping = trackServiceVisualMap[track.service]
+  if (!mapping) {
+    return null
+  }
+  return `${mapping.urlPrefix}${track.service_track_id}`
+}
+
+const hasBufferedRatio = (audio: HTMLAudioElement, threshold: number): boolean => {
+  if (audio.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+    return false
+  }
+  const duration = audio.duration
+  if (!Number.isFinite(duration) || duration <= 0) {
+    return audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA
+  }
+  if (audio.buffered.length === 0) {
+    return false
+  }
+  const bufferedEnd = audio.buffered.end(audio.buffered.length - 1)
+  return bufferedEnd / duration >= threshold
+}
+
+const waitForBufferedPlayback = (
+  audio: HTMLAudioElement,
+  threshold: number,
+  timeoutMs: number,
+): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    let timeoutId: number | undefined
+    let isSettled = false
+
+    const cleanup = () => {
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId)
+      }
+      audio.removeEventListener('progress', onUpdate)
+      audio.removeEventListener('loadedmetadata', onUpdate)
+      audio.removeEventListener('canplay', onUpdate)
+      audio.removeEventListener('canplaythrough', onUpdate)
+      audio.removeEventListener('error', onError)
+    }
+
+    const finish = (callback: () => void) => {
+      if (isSettled) {
+        return
+      }
+      isSettled = true
+      cleanup()
+      callback()
+    }
+
+    const onUpdate = () => {
+      if (hasBufferedRatio(audio, threshold)) {
+        finish(resolve)
+      }
+    }
+
+    const onError = () => {
+      finish(() => {
+        reject(new Error('AUDIO_BUFFERING_FAILED'))
+      })
+    }
+
+    audio.addEventListener('progress', onUpdate)
+    audio.addEventListener('loadedmetadata', onUpdate)
+    audio.addEventListener('canplay', onUpdate)
+    audio.addEventListener('canplaythrough', onUpdate)
+    audio.addEventListener('error', onError)
+
+    timeoutId = window.setTimeout(() => {
+      finish(() => {
+        reject(new Error('AUDIO_BUFFERING_TIMEOUT'))
+      })
+    }, timeoutMs)
+
+    onUpdate()
+  })
+}
+
 export function PlaylistsWorkspacePage() {
   const location = useLocation()
   const navigate = useNavigate()
   const routeState = (location.state as PlaylistsRouteState | null) ?? null
   const { session } = useAuth()
+  const { playTrack } = usePlayback()
 
   const initialPlaylists = useMemo(() => routeState?.playlists ?? [], [routeState?.playlists])
   const [groups, setGroups] = useState<GroupListItem[]>([])
@@ -117,7 +226,10 @@ export function PlaylistsWorkspacePage() {
 
   const [isGroupsLoading, setIsGroupsLoading] = useState(false)
   const [isDataLoading, setIsDataLoading] = useState(false)
+  const [isTracksLoading, setIsTracksLoading] = useState(false)
+  const [isPlaybackLoading, setIsPlaybackLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isTrackActionLoading, setIsTrackActionLoading] = useState(false)
 
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false)
   const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false)
@@ -136,6 +248,9 @@ export function PlaylistsWorkspacePage() {
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null)
   const [isConfirmSubmitting, setIsConfirmSubmitting] = useState(false)
   const [errorText, setErrorText] = useState<string | null>(null)
+  const [playlistTracks, setPlaylistTracks] = useState<PlaylistTrackItem[]>([])
+  const [openTrackMenuKey, setOpenTrackMenuKey] = useState<string | null>(null)
+  const [trackInfoModal, setTrackInfoModal] = useState<PlaylistTrackItem | null>(null)
 
   const accessToken = session?.accessToken ?? null
   const sessionEmail = normalizeEmail(session?.email)
@@ -147,6 +262,9 @@ export function PlaylistsWorkspacePage() {
   const displayRole: RoleFilter = appliedRoleFilter === 'ALL' ? actualRole ?? 'ALL' : appliedRoleFilter
   const canManageGroupPlaylists = Boolean(appliedGroupId) && actualRole === 'MAINTAINER'
   const canManageSelectedPlaylist = canManageGroupPlaylists && Boolean(selectedPlaylist)
+  const canEditTracks = Boolean(selectedPlaylist) && (actualRole === 'MAINTAINER' || actualRole === 'GUEST')
+  const canPlaySelectedPlaylist = Boolean(selectedPlaylist) && !isPlaybackLoading
+
   const roleFilterMismatch =
     Boolean(appliedGroupId) &&
     appliedRoleFilter !== 'ALL' &&
@@ -177,7 +295,6 @@ export function PlaylistsWorkspacePage() {
   const draftGroupLabel = resolveGroupLabel(draftGroupFilter)
   const draftRoleLabel = roleFilterLabel[draftRoleFilter === 'ALL' ? actualRole ?? 'ALL' : draftRoleFilter]
 
-  const mockTracks = selectedPlaylist ? makeMockTracks(selectedPlaylist) : []
   const heroImageUrl =
     appliedGroupId && appliedGroup ? appliedGroup.image_url ?? routeState?.groupImageUrl ?? null : null
   const heroStyle = heroImageUrl
@@ -256,6 +373,7 @@ export function PlaylistsWorkspacePage() {
     if (!accessToken) {
       setGroups([])
       setPlaylists([])
+      setPlaylistTracks([])
       setDraftGroupFilter('')
       setAppliedGroupFilter('')
       setSelectedPlaylistId(null)
@@ -267,6 +385,7 @@ export function PlaylistsWorkspacePage() {
   useEffect(() => {
     if (!accessToken || groups.length === 0) {
       setPlaylists([])
+      setPlaylistTracks([])
       setSelectedPlaylistId(null)
       setActualRole(null)
       return
@@ -315,6 +434,7 @@ export function PlaylistsWorkspacePage() {
           return
         }
         setPlaylists([])
+        setPlaylistTracks([])
         setActualRole(null)
         setErrorText(toUiErrorText(error))
       } finally {
@@ -362,12 +482,55 @@ export function PlaylistsWorkspacePage() {
 
   useEffect(() => {
     if (!selectedPlaylistId) {
+      setPlaylistTracks([])
+      setIsTracksLoading(false)
+      setOpenTrackMenuKey(null)
       return
     }
     if (!playlists.some((playlist) => playlist.id === selectedPlaylistId)) {
       setSelectedPlaylistId(null)
+      setPlaylistTracks([])
+      setIsTracksLoading(false)
+      setOpenTrackMenuKey(null)
     }
   }, [playlists, selectedPlaylistId])
+
+  useEffect(() => {
+    if (!accessToken || !appliedGroupId || !selectedPlaylistId) {
+      setPlaylistTracks([])
+      setIsTracksLoading(false)
+      setOpenTrackMenuKey(null)
+      return
+    }
+
+    let isMounted = true
+    const loadPlaylistTracks = async () => {
+      setIsTracksLoading(true)
+      setOpenTrackMenuKey(null)
+      try {
+        const nextTracks = await getPlaylistTracks(accessToken, appliedGroupId, selectedPlaylistId)
+        if (!isMounted) {
+          return
+        }
+        setPlaylistTracks(nextTracks)
+      } catch (error) {
+        if (!isMounted) {
+          return
+        }
+        setPlaylistTracks([])
+        setErrorText(toUiErrorText(error))
+      } finally {
+        if (isMounted) {
+          setIsTracksLoading(false)
+        }
+      }
+    }
+
+    void loadPlaylistTracks()
+    return () => {
+      isMounted = false
+    }
+  }, [accessToken, appliedGroupId, selectedPlaylistId])
 
   const resetCreateForm = () => {
     setCreateName('')
@@ -398,6 +561,8 @@ export function PlaylistsWorkspacePage() {
     setIsEditMode(false)
     setEditImageFile(null)
     setConfirmDialog(null)
+    setOpenTrackMenuKey(null)
+    setTrackInfoModal(null)
     setIsGroupDropdownOpen(false)
     setIsRoleDropdownOpen(false)
     setErrorText(null)
@@ -508,6 +673,8 @@ export function PlaylistsWorkspacePage() {
     setIsCreateMode(true)
     setIsEditMode(false)
     setConfirmDialog(null)
+    setOpenTrackMenuKey(null)
+    setTrackInfoModal(null)
     setErrorText(null)
   }
 
@@ -519,10 +686,73 @@ export function PlaylistsWorkspacePage() {
       state: {
         groupId: appliedGroupId,
         groupName: appliedGroup?.name ?? routeState?.groupName ?? null,
+        groupImageUrl: appliedGroup?.image_url ?? routeState?.groupImageUrl ?? null,
         playlistId: selectedPlaylist.id,
         playlistName: selectedPlaylist.name,
       },
     })
+  }
+
+  const handlePlaySelectedPlaylist = async () => {
+    if (!selectedPlaylist || !accessToken || !appliedGroupId || isPlaybackLoading) {
+      return
+    }
+
+    setIsPlaybackLoading(true)
+    setErrorText(null)
+
+    try {
+      const playbackQueueResponse = await getPlaylistPlaybackQueue(accessToken, appliedGroupId, selectedPlaylist.id)
+      const playbackQueue = playbackQueueResponse.items.map((item) => ({
+        id: String(item.track_id),
+        title: item.title,
+        artist: item.artist,
+        coverUrl: item.cover_url,
+        audioUrl: item.audio_url,
+      }))
+      const firstTrack = playbackQueue[0]
+      if (!firstTrack) {
+        setErrorText('В этом плейлисте пока нет доступных треков для воспроизведения.')
+        return
+      }
+
+      const bufferedAudio = new Audio(firstTrack.audioUrl)
+      bufferedAudio.preload = 'auto'
+      bufferedAudio.load()
+
+      await waitForBufferedPlayback(
+        bufferedAudio,
+        PLAYBACK_BUFFER_THRESHOLD,
+        PLAYBACK_BUFFER_TIMEOUT_MS,
+      )
+
+      playTrack(
+        {
+          id: firstTrack.id,
+          title: firstTrack.title,
+          artist: firstTrack.artist,
+          coverUrl: firstTrack.coverUrl,
+          audioUrl: firstTrack.audioUrl,
+        },
+        {
+          audio: bufferedAudio,
+          queue: playbackQueue,
+          startIndex: 0,
+        },
+      )
+    } catch (error) {
+      if (error instanceof Error && error.message === 'AUDIO_BUFFERING_TIMEOUT') {
+        setErrorText('Не удалось дождаться буфера трека. Попробуйте еще раз.')
+        return
+      }
+      if (error instanceof Error && error.message === 'AUDIO_BUFFERING_FAILED') {
+        setErrorText('Не удалось подготовить трек к воспроизведению.')
+        return
+      }
+      setErrorText(toUiErrorText(error))
+    } finally {
+      setIsPlaybackLoading(false)
+    }
   }
 
   const handleRequestDeletePlaylist = () => {
@@ -546,14 +776,60 @@ export function PlaylistsWorkspacePage() {
     try {
       await deletePlaylist(accessToken, appliedGroupId, confirmDialog.playlistId)
       setPlaylists((previous) => previous.filter((playlist) => playlist.id !== confirmDialog.playlistId))
+      setPlaylistTracks([])
       setSelectedPlaylistId(null)
       setIsEditMode(false)
       setIsCreateMode(false)
       setConfirmDialog(null)
+      setOpenTrackMenuKey(null)
     } catch (error) {
       setErrorText(toUiErrorText(error))
     } finally {
       setIsConfirmSubmitting(false)
+    }
+  }
+
+  const handleOpenTrackInfo = (track: PlaylistTrackItem) => {
+    setTrackInfoModal(track)
+    setOpenTrackMenuKey(null)
+  }
+
+  const handleTrackMenuToggle = (track: PlaylistTrackItem) => {
+    const trackKey = toTrackMenuKey(track)
+    setOpenTrackMenuKey((previous) => (previous === trackKey ? null : trackKey))
+  }
+
+  const handleRemoveTrackFromPlaylist = async (track: PlaylistTrackItem) => {
+    if (!canEditTracks || !accessToken || !appliedGroupId || !selectedPlaylistId) {
+      return
+    }
+
+    setIsTrackActionLoading(true)
+    setErrorText(null)
+    try {
+      await removeTrackFromPlaylist(
+        accessToken,
+        appliedGroupId,
+        selectedPlaylistId,
+        track.track_id,
+      )
+      setPlaylistTracks((previous) => previous.filter((item) => item.track_id !== track.track_id))
+      setPlaylists((previous) =>
+        previous.map((playlist) => {
+          if (playlist.id !== selectedPlaylistId) {
+            return playlist
+          }
+          return {
+            ...playlist,
+            track_count: Math.max(0, playlist.track_count - 1),
+          }
+        }),
+      )
+      setOpenTrackMenuKey(null)
+    } catch (error) {
+      setErrorText(toUiErrorText(error))
+    } finally {
+      setIsTrackActionLoading(false)
     }
   }
 
@@ -768,6 +1044,7 @@ export function PlaylistsWorkspacePage() {
                       setSelectedPlaylistId(playlist.id)
                       setIsCreateMode(false)
                       setIsEditMode(false)
+                      setOpenTrackMenuKey(null)
                     }}
                     type="button"
                   >
@@ -797,41 +1074,46 @@ export function PlaylistsWorkspacePage() {
               >
                 {selectedPlaylist ? (
                   <>
-                <div
-                  aria-hidden
-                  className={styles.mainCover}
-                  style={selectedPlaylist?.image_url ? { backgroundImage: `url(${selectedPlaylist.image_url})` } : undefined}
-                />
+                    <div
+                      aria-hidden
+                      className={styles.mainCover}
+                      style={selectedPlaylist.image_url ? { backgroundImage: `url(${selectedPlaylist.image_url})` } : undefined}
+                    />
 
-                <div className={styles.mainMeta}>
-                  <div className={styles.mainTitleRow}>
-                    <h3 className={styles.mainTitle} title={selectedPlaylist?.name ?? 'Плейлист не выбран'}>
-                      {selectedPlaylist?.name ?? 'Плейлист не выбран'}
-                    </h3>
+                    <div className={styles.mainMeta}>
+                      <div className={styles.mainTitleRow}>
+                        <h3 className={styles.mainTitle} title={selectedPlaylist.name}>
+                          {selectedPlaylist.name}
+                        </h3>
+                        {canManageSelectedPlaylist ? (
+                          <button className={styles.iconButton} onClick={handleStartEdit} type="button">
+                            ✎
+                          </button>
+                        ) : null}
+                      </div>
+
+                      <div className={styles.mainActions}>
+                        <button
+                          className={styles.circleAction}
+                          disabled={!canPlaySelectedPlaylist}
+                          onClick={() => void handlePlaySelectedPlaylist()}
+                          type="button"
+                        >
+                          ▶
+                          <span>Слушать</span>
+                        </button>
+                        <button className={styles.circleAction} type="button">
+                          ♡
+                          <span>В избранном</span>
+                        </button>
+                      </div>
+                    </div>
+
                     {canManageSelectedPlaylist ? (
-                      <button className={styles.iconButton} onClick={handleStartEdit} type="button">
-                        ✎
+                      <button className={styles.plusButton} onClick={handleOpenAddTracksScreen} type="button">
+                        +
                       </button>
                     ) : null}
-                  </div>
-
-                  <div className={styles.mainActions}>
-                    <button className={styles.circleAction} type="button">
-                      ▶
-                      <span>Слушать</span>
-                    </button>
-                    <button className={styles.circleAction} type="button">
-                      ♡
-                      <span>В избранном</span>
-                    </button>
-                  </div>
-                </div>
-
-                {canManageSelectedPlaylist ? (
-                  <button className={styles.plusButton} onClick={handleOpenAddTracksScreen} type="button">
-                    +
-                  </button>
-                ) : null}
                   </>
                 ) : (
                   <h3 className={styles.mainTitle}>Плейлист не выбран</h3>
@@ -888,21 +1170,59 @@ export function PlaylistsWorkspacePage() {
               <section className={styles.tracksCard}>
                 {!selectedPlaylist ? (
                   <p className={styles.emptyState}>Выберите плейлист, чтобы увидеть треки.</p>
-                ) : mockTracks.length === 0 ? (
+                ) : isTracksLoading ? (
+                  <p className={styles.emptyState}>Загружаем треки...</p>
+                ) : playlistTracks.length === 0 ? (
                   <p className={styles.emptyState}>Пока пусто!</p>
                 ) : (
-                  mockTracks.map((track) => (
-                    <article className={styles.trackRow} key={track.id}>
-                      <span aria-hidden className={styles.trackAvatar} />
-                      <div className={styles.trackMeta}>
-                        <p className={styles.trackTitle}>{track.title}</p>
-                        <p className={styles.trackArtist}>{track.artist}</p>
-                      </div>
-                      <button className={styles.trackMenuButton} type="button">
-                        ...
-                      </button>
-                    </article>
-                  ))
+                  playlistTracks.map((track) => {
+                    const trackKey = toTrackMenuKey(track)
+                    const isMenuOpen = openTrackMenuKey === trackKey
+                    const serviceMeta = resolveTrackServiceMeta(track.service)
+                    return (
+                      <article
+                        className={styles.trackRow}
+                        key={trackKey}
+                      >
+                        <span
+                          aria-hidden
+                          className={styles.trackAvatar}
+                          style={track.cover_url ? { backgroundImage: `url(${track.cover_url})` } : undefined}
+                        />
+                        <div className={styles.trackMeta}>
+                          <p className={styles.trackTitle}>{track.title}</p>
+                          <p className={styles.trackArtist}>{track.artist}</p>
+                        </div>
+                        <span className={styles.trackServiceBadge}>{serviceMeta.short}</span>
+                        <div className={styles.trackMenuWrap}>
+                          <button className={styles.trackMenuButton} onClick={() => handleTrackMenuToggle(track)} type="button">
+                            ...
+                          </button>
+                          {isMenuOpen ? (
+                            <div className={styles.trackMenuPopup}>
+                              <button
+                                className={styles.trackMenuItem}
+                                onClick={() => handleOpenTrackInfo(track)}
+                                type="button"
+                              >
+                                О треке
+                              </button>
+                              {canEditTracks ? (
+                                <button
+                                  className={styles.trackMenuItemDanger}
+                                  disabled={isTrackActionLoading}
+                                  onClick={() => void handleRemoveTrackFromPlaylist(track)}
+                                  type="button"
+                                >
+                                  {isTrackActionLoading ? 'Удаляем...' : 'Удалить трек'}
+                                </button>
+                              ) : null}
+                            </div>
+                          ) : null}
+                        </div>
+                      </article>
+                    )
+                  })
                 )}
               </section>
 
@@ -915,6 +1235,40 @@ export function PlaylistsWorkspacePage() {
           )}
         </section>
       </div>
+
+      {trackInfoModal ? (
+        <div aria-modal="true" className={styles.modalOverlay} onClick={() => setTrackInfoModal(null)} role="dialog">
+          <div className={styles.modalCard} onClick={(event) => event.stopPropagation()}>
+            <span
+              aria-hidden
+              className={styles.modalTrackCover}
+              style={trackInfoModal.cover_url ? { backgroundImage: `url(${trackInfoModal.cover_url})` } : undefined}
+            />
+            <h3 className={styles.modalTitle}>О треке</h3>
+            <p className={styles.modalText}><strong>Название:</strong> {trackInfoModal.title}</p>
+            <p className={styles.modalText}><strong>Исполнитель:</strong> {trackInfoModal.artist}</p>
+            <p className={styles.modalText}><strong>Сервис:</strong> {resolveTrackServiceMeta(trackInfoModal.service).full}</p>
+            {resolveTrackServiceUrl(trackInfoModal) ? (
+              <p className={styles.modalText}>
+                <strong>Ссылка:</strong>{' '}
+                <a
+                  className={styles.trackLink}
+                  href={resolveTrackServiceUrl(trackInfoModal) ?? undefined}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  Открыть в сервисе
+                </a>
+              </p>
+            ) : null}
+            <div className={styles.modalActions}>
+              <button className={styles.secondaryButton} onClick={() => setTrackInfoModal(null)} type="button">
+                Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {confirmDialog ? (
         <div aria-modal="true" className={styles.modalOverlay} onClick={() => setConfirmDialog(null)} role="dialog">

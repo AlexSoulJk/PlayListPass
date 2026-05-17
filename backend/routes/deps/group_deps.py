@@ -43,3 +43,11 @@ async def get_group_maintainer_connection(
     manager: GroupManager = Depends(get_group_manager),
 ) -> Connection:
     return await manager.get_maintainer_connection_or_403(user=user, group=group)
+
+
+async def get_group_track_editor_connection(
+    user: User = Depends(get_current_active_user),
+    group: Group = Depends(get_group_from_path),
+    manager: GroupManager = Depends(get_group_manager),
+) -> Connection:
+    return await manager.get_track_editor_connection_or_403(user=user, group=group)

@@ -24,6 +24,41 @@ export type GroupPlaylistItem = {
   track_count: number
 }
 
+export type PlaylistTrackItem = {
+  track_id: number
+  title: string
+  artist: string
+  service: 'YANDEX_MUSIC' | 'YOUTUBE' | 'SPOTIFY'
+  service_track_id: string
+  cover_url: string | null
+  external_url: string | null
+  duration_sec: number | null
+}
+
+export type PlaylistTrackDeleteResponse = {
+  status: 'deleted'
+  playlist_id: string
+  track_id: number
+}
+
+export type PlaylistPlaybackTrackItem = {
+  playlist_id: string
+  track_id: number
+  title: string
+  artist: string
+  service: 'YANDEX_MUSIC' | 'YOUTUBE' | 'SPOTIFY'
+  service_track_id: string
+  cover_url: string | null
+  external_url: string | null
+  duration_sec: number | null
+  audio_url: string
+}
+
+export type PlaylistPlaybackQueue = {
+  playlist_id: string
+  items: PlaylistPlaybackTrackItem[]
+}
+
 export type PlaylistCreatePayload = {
   name: string
   image_url?: string | null

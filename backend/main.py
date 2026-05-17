@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.auth import auth_router
 from routes.group import group_router
+from routes.playlist import playlist_router
+from routes.search import search_router
 from routes.test import router as test_router
 
 app = FastAPI(title="PlayListPass API")
@@ -26,4 +28,6 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(group_router)
+app.include_router(playlist_router)
+app.include_router(search_router)
 app.include_router(test_router)

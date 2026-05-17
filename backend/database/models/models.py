@@ -181,6 +181,10 @@ class Track(Base):
     track_artists: Mapped[List["TrackArtist"]] = relationship(
         back_populates="track", cascade="all, delete-orphan"
     )
+    service_links: Mapped[List["TrackServiceLink"]] = relationship(
+        back_populates="track",
+        cascade="all, delete-orphan",
+    )
 
     __table_args__ = (Index("ix_tracks_title", "title"),)
 
@@ -209,6 +213,37 @@ class PlaylistTrack(Base):
         UniqueConstraint("playlist_id", "track_id", name="uq_playlist_track"),
         Index("ix_playlist_tracks_playlist_id", "playlist_id"),
         Index("ix_playlist_tracks_track_id", "track_id"),
+    )
+
+
+class TrackServiceLink(Base):
+    __tablename__ = "track_service_links"
+
+    track_id: Mapped[int] = mapped_column(
+        ForeignKey("tracks.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    service: Mapped[StreamingService] = mapped_column(
+        Enum(StreamingService, name="streaming_service_enum"),
+        nullable=False,
+    )
+    service_track_id: Mapped[str] = mapped_column(String(191), nullable=False)
+    external_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    cover_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    duration_sec: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    imported_from_search: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    fetched_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    track: Mapped["Track"] = relationship(back_populates="service_links")
+
+    __table_args__ = (
+        UniqueConstraint("service", "service_track_id", name="uq_track_service_link"),
+        Index("ix_track_service_links_track_id", "track_id"),
+        Index(
+            "ix_track_service_links_service_track_id",
+            "service",
+            "service_track_id",
+        ),
     )
 
 

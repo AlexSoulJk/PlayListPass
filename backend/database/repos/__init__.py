@@ -8,6 +8,7 @@ __all__ = [
     "GroupRepos",
     "PlaylistRepos",
     "TrackArtistRepos",
+    "TrackServiceLinkRepos",
     "TrackRepos",
     "YandexTrackRepos",
 ]
@@ -18,6 +19,7 @@ _EXPORT_TO_MODULE = {
     "GroupRepos": "database.repos.group_repos",
     "PlaylistRepos": "database.repos.playlist_repos",
     "TrackArtistRepos": "database.repos.track_artist_repos",
+    "TrackServiceLinkRepos": "database.repos.track_service_link_repos",
     "TrackRepos": "database.repos.track_repos",
     "YandexTrackRepos": "database.repos.yandex_track_repos",
 }

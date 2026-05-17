@@ -66,6 +66,15 @@ class GroupManager:
             )
         return connection
 
+    async def get_track_editor_connection_or_403(self, *, user: User, group: Group) -> Connection:
+        connection = await self.get_member_connection_or_403(user=user, group=group)
+        if connection.role == UserRole.VIEWER:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="GROUP_TRACK_EDIT_FORBIDDEN",
+            )
+        return connection
+
     async def get_group_list(self, *, user: User) -> list[GroupListItemResponse]:
         groups = await self.repos.list_user_groups(user_id=user.id)
         return [

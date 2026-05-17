@@ -1,27 +1,538 @@
-.searchBar {
-  min-height: 56px;
-  border-radius: 14px;
-  border: 1px dashed rgba(255, 255, 255, 0.32);
+.root {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: var(--color-white);
+}
+
+.hero {
+  border-radius: 18px;
+  border: 1px solid var(--workspace-header-border);
+  background: var(--workspace-header-bg);
+  padding: 14px 16px;
+}
+
+.heroTop {
   display: flex;
   align-items: center;
-  padding: 0 14px;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.heroGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.heroGroupAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: radial-gradient(circle at 40% 35%, #eceaea, #c7c4ca 60%, #a9a5ac 100%);
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+}
+
+.heroTitle {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.heroRole {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.heroSubtitle {
+  margin: 8px 0 0;
+  font-size: 0.94rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.filtersCard {
+  border-radius: 18px;
+  border: 1px solid var(--workspace-panel-border);
+  background: var(--workspace-panel-bg);
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.playlistHint {
+  margin: 0;
+  font-size: 0.86rem;
   color: rgba(255, 255, 255, 0.74);
 }
 
-.results {
-  margin: 12px 0 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
+.dropdownWrap {
+  position: relative;
+}
+
+.dropdownTrigger {
+  min-height: 38px;
+  min-width: 180px;
+  max-width: min(340px, 75vw);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.34);
+  color: #ffffff;
+  padding: 0 12px;
+  font-size: 0.88rem;
+  font-weight: 650;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.dropdownTrigger:hover {
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.chevron {
+  font-size: 0.85rem;
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  z-index: 6;
+  min-width: 180px;
+  max-height: 260px;
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  background: #090909;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dropdownItem {
+  min-height: 34px;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: #ffffff;
+  font-size: 0.88rem;
+  text-align: left;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.dropdownItem:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.dropdownItemActive {
+  background: rgba(255, 255, 255, 0.19);
+  font-weight: 700;
+}
+
+.serviceFilters {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
-.resultItem {
-  min-height: 54px;
+.servicePill {
+  min-height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--service-pill-border);
+  background: var(--service-pill-bg);
+  color: var(--service-pill-text);
+  font-size: 0.84rem;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.servicePillSelected {
+  border-color: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+}
+
+.servicePill:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+.searchForm {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.searchInput {
+  min-height: 48px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.17);
-  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.32);
+  color: #fff;
+  padding: 0 14px;
+}
+
+.searchInput::placeholder {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.searchButton {
+  min-width: 120px;
+  min-height: 48px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.searchButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.errorText {
+  margin: 0;
+  color: #ff8a8a;
+  font-size: 0.9rem;
+}
+
+.resultsCard {
+  border-radius: 18px;
+  border: 1px solid var(--workspace-panel-border);
+  background: var(--workspace-panel-bg);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 280px;
+}
+
+.emptyState {
+  margin: auto;
+  color: rgba(255, 255, 255, 0.78);
+  text-align: center;
+}
+
+.trackRow {
+  min-height: 58px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.26);
+  display: grid;
+  grid-template-columns: 44px 36px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+}
+
+.trackCover {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: radial-gradient(circle at 40% 35%, #eceaea, #c7c4ca 60%, #a9a5ac 100%);
+  background-size: cover;
+  background-position: center;
+}
+
+.serviceIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: grid;
+  place-items: center;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.trackMeta {
+  min-width: 0;
+}
+
+.trackTitle {
+  margin: 0;
+  font-size: 0.98rem;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trackArtist {
+  margin: 2px 0 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dbMark {
+  font-size: 1.08rem;
+  color: #5af9a2;
+  font-weight: 900;
+}
+
+:global(:root[data-theme='dark']) .dbMark {
+  color: rgba(210, 210, 210, 0.9);
+}
+
+.menuWrap {
+  position: relative;
+}
+
+.menuButton {
+  min-width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(0, 0, 0, 0.36);
+  color: #fff;
+  cursor: pointer;
+}
+
+.menuPopup {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 190px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(12, 12, 12, 0.96);
+  padding: 6px;
+  z-index: 3;
+  display: grid;
+  gap: 4px;
+}
+
+.inlinePlaylistPicker {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 196px;
+  z-index: 4;
+  width: 220px;
+  max-height: 260px;
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(12, 12, 12, 0.98);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inlinePlaylistItem {
+  min-height: 34px;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  text-align: left;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.inlinePlaylistItem:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.inlinePlaylistItem:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.inlinePlaylistEmpty {
+  margin: 0;
+  padding: 8px 10px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.83rem;
+}
+
+.menuItem {
+  min-height: 34px;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  text-align: left;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.menuItem:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.menuGhostButton {
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+
+.pagination {
   display: flex;
   align-items: center;
-  padding: 0 14px;
+  justify-content: center;
+  gap: 10px;
+}
+
+.pageButton {
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.26);
+  color: #fff;
+  cursor: pointer;
+}
+
+.pageButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pageLabel {
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.9rem;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  display: grid;
+  place-items: center;
+  z-index: 50;
+  padding: 14px;
+}
+
+.modalCard {
+  width: min(460px, 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(12, 12, 12, 0.98);
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.modalCover {
+  width: 78px;
+  height: 78px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: radial-gradient(circle at 40% 35%, #eceaea, #c7c4ca 60%, #a9a5ac 100%);
+  background-size: cover;
+  background-position: center;
+}
+
+.modalGrid p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.modalText {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.9rem;
+}
+
+.trackLink {
+  color: #9edbff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.trackLink:hover {
+  color: #c9ebff;
+}
+
+.closeButton {
+  min-height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+.toastSuccess,
+.toastError {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  min-width: 220px;
+  max-width: 320px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  z-index: 60;
+}
+
+.toastSuccess {
+  background: rgba(22, 108, 56, 0.94);
+  color: #fff;
+}
+
+.toastError {
+  background: rgba(139, 20, 20, 0.95);
+  color: #fff;
+}
+
+@media (max-width: 760px) {
+  .filterBar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dropdownTrigger {
+    width: 100%;
+    max-width: none;
+  }
+
+  .searchForm {
+    grid-template-columns: 1fr;
+  }
+
+  .searchButton {
+    width: 100%;
+  }
 }

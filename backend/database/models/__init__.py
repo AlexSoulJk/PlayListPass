@@ -9,6 +9,7 @@ from .models import (
     PlaylistTrack,
     Track,
     TrackArtist,
+    TrackServiceLink,
     User,
     UserCredential,
     YandexTrack,

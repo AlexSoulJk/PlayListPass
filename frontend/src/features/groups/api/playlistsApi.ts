@@ -5,6 +5,10 @@ import type {
   PlaylistCreatePayload,
   PlaylistImageUploadInitPayload,
   PlaylistImageUploadInitResponse,
+  PlaylistPlaybackQueue,
+  PlaylistPlaybackTrackItem,
+  PlaylistTrackDeleteResponse,
+  PlaylistTrackItem,
   PlaylistUpdatePayload,
 } from '../models/types'
 
@@ -21,6 +25,9 @@ type PlaylistErrorCode =
   | 'PLAYLIST_IMAGE_UNSUPPORTED_FORMAT'
   | 'PLAYLIST_IMAGE_OBJECT_NOT_FOUND'
   | 'PLAYLIST_IMAGE_UPLOAD_FAILED'
+  | 'PLAYLIST_TRACK_NOT_FOUND'
+  | 'PLAYLIST_AUDIO_NOT_AVAILABLE'
+  | 'GROUP_TRACK_EDIT_FORBIDDEN'
   | 'STORAGE_BACKEND_NOT_AVAILABLE'
   | 'VALIDATION_ERROR'
   | 'NETWORK_ERROR'
@@ -36,6 +43,14 @@ type PlaylistDeleteResponse = {
   status: 'deleted'
   playlist_id: string
 }
+
+type PlaylistTracksResponse = {
+  playlist_id: string
+  items: PlaylistTrackItem[]
+}
+
+type PlaylistPlaybackTrackResponse = PlaylistPlaybackTrackItem
+type PlaylistPlaybackQueueResponse = PlaylistPlaybackQueue
 
 export class PlaylistsApiError extends Error {
   code: PlaylistErrorCode
@@ -99,6 +114,18 @@ const resolvePlaylistError = (error: unknown): PlaylistErrorCode => {
     return 'PLAYLIST_IMAGE_OBJECT_NOT_FOUND'
   }
 
+  if (detail.includes('PLAYLIST_TRACK_NOT_FOUND')) {
+    return 'PLAYLIST_TRACK_NOT_FOUND'
+  }
+
+  if (detail.includes('PLAYLIST_AUDIO_NOT_AVAILABLE')) {
+    return 'PLAYLIST_AUDIO_NOT_AVAILABLE'
+  }
+
+  if (detail.includes('GROUP_TRACK_EDIT_FORBIDDEN')) {
+    return 'GROUP_TRACK_EDIT_FORBIDDEN'
+  }
+
   if (detail.includes('STORAGE_BACKEND_NOT_AVAILABLE')) {
     return 'STORAGE_BACKEND_NOT_AVAILABLE'
   }
@@ -150,7 +177,7 @@ export const createPlaylist = async (
     )
     return toGroupPlaylistItem(data)
   } catch (error) {
-    throw toPlaylistsApiError(error, 'Не удалось создать плейлист')
+    throw toPlaylistsApiError(error, 'Failed to create playlist')
   }
 }
 
@@ -168,7 +195,7 @@ export const updatePlaylist = async (
     )
     return toGroupPlaylistItem(data)
   } catch (error) {
-    throw toPlaylistsApiError(error, 'Не удалось обновить плейлист')
+    throw toPlaylistsApiError(error, 'Failed to update playlist')
   }
 }
 
@@ -192,7 +219,7 @@ export const uploadPlaylistImage = async (
     )
     initResponse = data
   } catch (error) {
-    throw toPlaylistsApiError(error, 'Не удалось подготовить загрузку картинки плейлиста')
+    throw toPlaylistsApiError(error, 'Failed to initialize playlist image upload')
   }
 
   try {
@@ -202,7 +229,7 @@ export const uploadPlaylistImage = async (
       },
     })
   } catch {
-    throw new PlaylistsApiError('PLAYLIST_IMAGE_UPLOAD_FAILED', 'Не удалось загрузить файл в хранилище')
+    throw new PlaylistsApiError('PLAYLIST_IMAGE_UPLOAD_FAILED', 'Failed to upload image file to storage')
   }
 
   try {
@@ -215,7 +242,7 @@ export const uploadPlaylistImage = async (
     )
     return toGroupPlaylistItem(data)
   } catch (error) {
-    throw toPlaylistsApiError(error, 'Не удалось подтвердить загрузку картинки плейлиста')
+    throw toPlaylistsApiError(error, 'Failed to commit playlist image upload')
   }
 }
 
@@ -231,6 +258,71 @@ export const deletePlaylist = async (
     )
     return data
   } catch (error) {
-    throw toPlaylistsApiError(error, 'Не удалось удалить плейлист')
+    throw toPlaylistsApiError(error, 'Failed to delete playlist')
+  }
+}
+
+export const getPlaylistTracks = async (
+  accessToken: string,
+  groupId: string,
+  playlistId: string,
+): Promise<PlaylistTrackItem[]> => {
+  try {
+    const { data } = await httpClient.get<PlaylistTracksResponse>(
+      `/playlist/${groupId}/${playlistId}/tracks`,
+      authHeaders(accessToken),
+    )
+    return data.items
+  } catch (error) {
+    throw toPlaylistsApiError(error, 'Failed to load playlist tracks')
+  }
+}
+
+export const removeTrackFromPlaylist = async (
+  accessToken: string,
+  groupId: string,
+  playlistId: string,
+  trackId: number,
+): Promise<PlaylistTrackDeleteResponse> => {
+  try {
+    const { data } = await httpClient.delete<PlaylistTrackDeleteResponse>(
+      `/playlist/${groupId}/${playlistId}/tracks/${trackId}`,
+      authHeaders(accessToken),
+    )
+    return data
+  } catch (error) {
+    throw toPlaylistsApiError(error, 'Failed to remove track from playlist')
+  }
+}
+
+export const getPlaylistFirstPlayableTrack = async (
+  accessToken: string,
+  groupId: string,
+  playlistId: string,
+): Promise<PlaylistPlaybackTrackItem> => {
+  try {
+    const { data } = await httpClient.get<PlaylistPlaybackTrackResponse>(
+      `/playlist/${groupId}/${playlistId}/tracks/playback/first`,
+      authHeaders(accessToken),
+    )
+    return data
+  } catch (error) {
+    throw toPlaylistsApiError(error, 'Failed to load playable track')
+  }
+}
+
+export const getPlaylistPlaybackQueue = async (
+  accessToken: string,
+  groupId: string,
+  playlistId: string,
+): Promise<PlaylistPlaybackQueue> => {
+  try {
+    const { data } = await httpClient.get<PlaylistPlaybackQueueResponse>(
+      `/playlist/${groupId}/${playlistId}/tracks/playback`,
+      authHeaders(accessToken),
+    )
+    return data
+  } catch (error) {
+    throw toPlaylistsApiError(error, 'Failed to load playback queue')
   }
 }
